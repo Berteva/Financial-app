@@ -3,7 +3,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
 <meta name="apple-mobile-web-app-title" content="FinançaFamiliar"/>
@@ -139,9 +139,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .cat-btn .cl{font-size:9px;color:var(–text-muted);text-align:center;line-height:1.2;}
 .cat-btn.selected{border-color:currentColor;}
 
-/* FAB */
-.fab{position:fixed;bottom:calc(var(–nav-h) + 14px + env(safe-area-inset-bottom));right:20px;width:50px;height:50px;border-radius:50%;background:var(–accent);border:none;color:#000;font-size:24px;cursor:pointer;box-shadow:0 4px 20px rgba(0,229,160,0.4);z-index:998;display:flex;align-items:center;justify-content:center;transition:transform 0.2s;}
-.fab:active{transform:scale(0.92);}
+/* FAB removido — lançamento rápido via nav */
 
 /* DONUT */
 .donut-wrap{display:flex;align-items:center;gap:16px;}
@@ -448,6 +446,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
     <button class="nav-btn active" onclick="showPage('dashboard',this)"><span class="nav-icon">📊</span>Início</button>
     <button class="nav-btn" onclick="showPage('transacoes',this)"><span class="nav-icon">📋</span>Contas</button>
     <button class="nav-btn" onclick="showPage('orcamento',this)"><span class="nav-icon">🎯</span>Orçamento</button>
+    <button class="nav-btn nav-add" onclick="openModal('modalQuick')"><span class="nav-icon">➕</span>Lançar</button>
     <button class="nav-btn" onclick="showPage('familia',this)"><span class="nav-icon">👨‍👩‍👧</span>Família</button>
     <button class="nav-btn" onclick="showPage('dicas',this)"><span class="nav-icon">💡</span>Dicas</button>
     <button class="nav-btn" onclick="showPage('relatorios',this)"><span class="nav-icon">📈</span>Dados</button>
@@ -455,9 +454,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
     <button class="nav-btn" onclick="showPage('config',this)"><span class="nav-icon">⚙️</span>Config</button>
   </nav>
 
-  <!-- FAB -->
-
-<button class="fab" onclick="openModal('modalQuick')">+</button>
+  <!-- FAB removido -->
 
 </div>
 
