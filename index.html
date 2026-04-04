@@ -755,21 +755,6 @@ html, body {
   color: white;
 }
 
-/* Upload area */
-.upload-area {
-  border: 2px dashed var(--border);
-  border-radius: var(--radius);
-  padding: 40px 20px;
-  text-align: center;
-  cursor: pointer;
-  transition: var(--transition);
-}
-
-.upload-area:active {
-  border-color: var(--accent);
-  background: var(--accent-dim);
-}
-
 /* Chips */
 .chips {
   display: flex;
@@ -864,7 +849,7 @@ html, body {
 
 <script>
 // ============================================
-// CONSTANTES
+// CONSTANTES GLOBAIS
 // ============================================
 const CATEGORIES = [
   { id: 'alimentacao', label: 'Alimentação', icon: '🍽️', color: '#fb923c', defaultLimit: 1500 },
@@ -928,7 +913,8 @@ const Utils = {
   },
   
   calculatePercentage(value, total) {
-    return total > 0 ? Math.min(100, Math.round((value / total) * 100)) : 0;
+    if (total <= 0) return 0;
+    return Math.min(100, Math.round((value / total) * 100));
   },
   
   getProgressColor(percentage) {
@@ -943,6 +929,19 @@ const Utils = {
       if (keywords.some(keyword => desc.includes(keyword))) return category;
     }
     return 'outros';
+  },
+  
+  parseNumber(value) {
+    if (!value && value !== 0) return 0;
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? 0 : parsed;
+  },
+  
+  validateDate(dateStr) {
+    if (!dateStr) return this.getTodayISO();
+    const regex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!regex.test(dateStr)) return this.getTodayISO();
+    return dateStr;
   },
   
   debounce(func, wait) {
@@ -961,194 +960,178 @@ const Utils = {
 // ============================================
 // ESTADO DA APLICAÇÃO
 // ============================================
-let AppState = {
+const AppState = {
   transactions: [],
   members: [],
   goals: [],
   config: { familyName: 'Minha Família', monthlyIncome: 8500, emergencyFund: 0 },
   categoryLimits: {},
-  ui: { currentPage: 'dashboard', transactionFilter: 'all', sidebarOpen: false }
+  ui: { 
+    currentPage: 'dashboard', 
+    transactionFilter: 'all',
+    sidebarOpen: false,
+    searchTerm: ''
+  },
+  
+  // Computed getters
+  getTotalCredit() {
+    return this.transactions.filter(t => t.type === 'credit').reduce((sum, t) => sum + t.amount, 0);
+  },
+  
+  getTotalDebit() {
+    return this.transactions.filter(t => t.type === 'debit').reduce((sum, t) => sum + t.amount, 0);
+  },
+  
+  getBalance() {
+    return this.getTotalCredit() - this.getTotalDebit();
+  },
+  
+  getCategoryTotal(categoryId) {
+    return this.transactions
+      .filter(t => t.type === 'debit' && t.category === categoryId)
+      .reduce((sum, t) => sum + t.amount, 0);
+  },
+  
+  getCategoryLimit(categoryId) {
+    return this.categoryLimits[categoryId] || CATEGORIES.find(c => c.id === categoryId)?.defaultLimit || 0;
+  },
+  
+  getMemberSpending(memberId) {
+    return this.transactions
+      .filter(t => t.type === 'debit' && t.memberId === memberId)
+      .reduce((sum, t) => sum + t.amount, 0);
+  },
+  
+  // Mutations
+  addTransaction(transaction) {
+    this.transactions.unshift({ ...transaction, id: Utils.generateId('tx') });
+    this.save();
+  },
+  
+  updateTransactionCategory(transactionId, newCategory) {
+    const index = this.transactions.findIndex(t => t.id === transactionId);
+    if (index !== -1) {
+      this.transactions[index].category = newCategory;
+      this.save();
+    }
+  },
+  
+  deleteTransaction(transactionId) {
+    this.transactions = this.transactions.filter(t => t.id !== transactionId);
+    this.save();
+  },
+  
+  addMember(member) {
+    if (this.members.some(m => m.name.toLowerCase() === member.name.toLowerCase())) {
+      return false;
+    }
+    this.members.push({ ...member, id: Utils.generateId('mem') });
+    this.save();
+    return true;
+  },
+  
+  deleteMember(memberId) {
+    this.members = this.members.filter(m => m.id !== memberId);
+    this.transactions.forEach(t => {
+      if (t.memberId === memberId) t.memberId = '';
+    });
+    this.save();
+  },
+  
+  addGoal(goal) {
+    this.goals.push({ ...goal, id: Utils.generateId('goal'), currentAmount: goal.currentAmount || 0 });
+    this.save();
+  },
+  
+  addGoalContribution(goalId, amount) {
+    const goal = this.goals.find(g => g.id === goalId);
+    if (goal) {
+      goal.currentAmount = Math.min(goal.targetAmount, goal.currentAmount + amount);
+      this.save();
+    }
+  },
+  
+  deleteGoal(goalId) {
+    this.goals = this.goals.filter(g => g.id !== goalId);
+    this.save();
+  },
+  
+  updateConfig(config) {
+    this.config = { ...this.config, ...config };
+    this.save();
+  },
+  
+  updateCategoryLimit(categoryId, limit) {
+    this.categoryLimits[categoryId] = limit;
+    this.save();
+  },
+  
+  setCurrentPage(page) {
+    this.ui.currentPage = page;
+    this.save();
+  },
+  
+  setTransactionFilter(filter) {
+    this.ui.transactionFilter = filter;
+    this.save();
+  },
+  
+  setSearchTerm(term) {
+    this.ui.searchTerm = term;
+  },
+  
+  save() {
+    try {
+      localStorage.setItem('financa_familiar_v4', JSON.stringify({
+        transactions: this.transactions,
+        members: this.members,
+        goals: this.goals,
+        config: this.config,
+        categoryLimits: this.categoryLimits,
+        ui: { transactionFilter: this.ui.transactionFilter }
+      }));
+    } catch(e) { console.warn('Save failed:', e); }
+  },
+  
+  load() {
+    try {
+      const saved = localStorage.getItem('financa_familiar_v4');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        this.transactions = parsed.transactions || [];
+        this.members = parsed.members || [];
+        this.goals = parsed.goals || [];
+        this.config = { ...this.config, ...parsed.config };
+        this.categoryLimits = parsed.categoryLimits || {};
+        if (parsed.ui?.transactionFilter) {
+          this.ui.transactionFilter = parsed.ui.transactionFilter;
+        }
+        return;
+      }
+    } catch(e) { console.warn('Load failed:', e); }
+    
+    // Initialize with demo data
+    this.transactions = JSON.parse(JSON.stringify(DEMO_TRANSACTIONS));
+    this.categoryLimits = {};
+    CATEGORIES.forEach(cat => {
+      this.categoryLimits[cat.id] = cat.defaultLimit;
+    });
+  }
 };
 
 // ============================================
-// PERSISTÊNCIA
+// CÁLCULO DE SCORE
 // ============================================
-function saveState() {
-  try {
-    localStorage.setItem('financa_familiar_v3', JSON.stringify({
-      transactions: AppState.transactions,
-      members: AppState.members,
-      goals: AppState.goals,
-      config: AppState.config,
-      categoryLimits: AppState.categoryLimits
-    }));
-  } catch(e) { console.warn('Save failed:', e); }
-}
-
-function loadState() {
-  try {
-    const saved = localStorage.getItem('financa_familiar_v3');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      AppState.transactions = parsed.transactions || [];
-      AppState.members = parsed.members || [];
-      AppState.goals = parsed.goals || [];
-      AppState.config = { ...AppState.config, ...parsed.config };
-      AppState.categoryLimits = parsed.categoryLimits || {};
-      return;
-    }
-  } catch(e) { console.warn('Load failed:', e); }
-  
-  // Initialize with demo data
-  AppState.transactions = [...DEMO_TRANSACTIONS];
-  AppState.categoryLimits = {};
-  CATEGORIES.forEach(cat => {
-    AppState.categoryLimits[cat.id] = cat.defaultLimit;
-  });
-}
-
-// ============================================
-// MUTAÇÕES DO ESTADO
-// ============================================
-function addTransaction(transaction) {
-  AppState.transactions.unshift({ ...transaction, id: Utils.generateId('tx') });
-  saveState();
-  renderCurrentPage();
-  showToast('✅ Transação adicionada!');
-}
-
-function updateTransactionCategory(transactionId, newCategory) {
-  const index = AppState.transactions.findIndex(t => t.id === transactionId);
-  if (index !== -1) {
-    AppState.transactions[index].category = newCategory;
-    saveState();
-    renderCurrentPage();
-    showToast('Categoria atualizada!');
-  }
-}
-
-function deleteTransaction(transactionId) {
-  AppState.transactions = AppState.transactions.filter(t => t.id !== transactionId);
-  saveState();
-  renderCurrentPage();
-  showToast('🗑️ Transação excluída!');
-}
-
-function addMember(member) {
-  AppState.members.push({ ...member, id: Utils.generateId('mem') });
-  saveState();
-  renderCurrentPage();
-  showToast('✅ Membro adicionado!');
-}
-
-function deleteMember(memberId) {
-  AppState.members = AppState.members.filter(m => m.id !== memberId);
-  AppState.transactions.forEach(t => {
-    if (t.memberId === memberId) t.memberId = '';
-  });
-  saveState();
-  renderCurrentPage();
-  showToast('Membro removido!');
-}
-
-function addGoal(goal) {
-  AppState.goals.push({ ...goal, id: Utils.generateId('goal'), currentAmount: goal.currentAmount || 0 });
-  saveState();
-  renderCurrentPage();
-  showToast('✅ Meta criada!');
-}
-
-function addGoalContribution(goalId, amount) {
-  const goal = AppState.goals.find(g => g.id === goalId);
-  if (goal) {
-    goal.currentAmount = Math.min(goal.targetAmount, goal.currentAmount + amount);
-    saveState();
-    renderCurrentPage();
-    showToast('✅ Aporte registrado!');
-  }
-}
-
-function deleteGoal(goalId) {
-  AppState.goals = AppState.goals.filter(g => g.id !== goalId);
-  saveState();
-  renderCurrentPage();
-  showToast('Meta excluída!');
-}
-
-function updateConfig(config) {
-  AppState.config = { ...AppState.config, ...config };
-  saveState();
-  updateHeader();
-  renderCurrentPage();
-}
-
-function updateCategoryLimit(categoryId, limit) {
-  AppState.categoryLimits[categoryId] = limit;
-  saveState();
-  renderCurrentPage();
-}
-
-function setCurrentPage(page) {
-  AppState.ui.currentPage = page;
-  closeSidebar();
-  renderCurrentPage();
-}
-
-function clearAllData() {
-  localStorage.removeItem('financa_familiar_v3');
-  AppState.transactions = [...DEMO_TRANSACTIONS];
-  AppState.members = [];
-  AppState.goals = [];
-  AppState.config = { familyName: 'Minha Família', monthlyIncome: 8500, emergencyFund: 0 };
-  AppState.categoryLimits = {};
-  CATEGORIES.forEach(cat => {
-    AppState.categoryLimits[cat.id] = cat.defaultLimit;
-  });
-  saveState();
-  renderCurrentPage();
-  showToast('Dados reiniciados!');
-}
-
-// ============================================
-// COMPUTED PROPERTIES
-// ============================================
-function getTotalCredit() {
-  return AppState.transactions.filter(t => t.type === 'credit').reduce((sum, t) => sum + t.amount, 0);
-}
-
-function getTotalDebit() {
-  return AppState.transactions.filter(t => t.type === 'debit').reduce((sum, t) => sum + t.amount, 0);
-}
-
-function getBalance() {
-  return getTotalCredit() - getTotalDebit();
-}
-
-function getCategoryTotal(categoryId) {
-  return AppState.transactions
-    .filter(t => t.type === 'debit' && t.category === categoryId)
-    .reduce((sum, t) => sum + t.amount, 0);
-}
-
-function getCategoryLimit(categoryId) {
-  return AppState.categoryLimits[categoryId] || CATEGORIES.find(c => c.id === categoryId)?.defaultLimit || 0;
-}
-
-function getMemberSpending(memberId) {
-  return AppState.transactions
-    .filter(t => t.type === 'debit' && t.memberId === memberId)
-    .reduce((sum, t) => sum + t.amount, 0);
-}
-
 function calculateScore() {
   let score = 0;
   const details = [];
-  const monthlyIncome = AppState.config.monthlyIncome || getTotalCredit() || 1;
-  const balance = getBalance();
-  const totalDebit = getTotalDebit();
+  const monthlyIncome = AppState.config.monthlyIncome || AppState.getTotalCredit() || 1;
+  const balance = AppState.getBalance();
+  const totalDebit = AppState.getTotalDebit();
   const savings = balance > 0 ? balance : 0;
   const emergencyFund = AppState.config.emergencyFund || 0;
   
+  // Positive balance (30 points)
   if (balance >= 0) {
     score += 30;
     details.push('✅ Saldo positivo');
@@ -1156,6 +1139,7 @@ function calculateScore() {
     details.push('❌ Saldo negativo');
   }
   
+  // Savings rate (20 points)
   if (savings >= monthlyIncome * 0.1) {
     score += 20;
     details.push('✅ Poupança ≥ 10% da renda');
@@ -1163,9 +1147,10 @@ function calculateScore() {
     details.push('⚠️ Poupança abaixo de 10%');
   }
   
+  // Category limits (20 points)
   const exceededCategories = CATEGORIES.filter(cat => {
-    const spent = getCategoryTotal(cat.id);
-    const limit = getCategoryLimit(cat.id);
+    const spent = AppState.getCategoryTotal(cat.id);
+    const limit = AppState.getCategoryLimit(cat.id);
     return limit > 0 && spent > limit;
   });
   
@@ -1176,6 +1161,7 @@ function calculateScore() {
     details.push(`❌ ${exceededCategories.length} categoria(s) estourada(s)`);
   }
   
+  // Emergency fund (15 points)
   const monthlyExpenses = totalDebit;
   if (emergencyFund >= monthlyExpenses * 3) {
     score += 15;
@@ -1184,7 +1170,8 @@ function calculateScore() {
     details.push('⚠️ Reserva de emergência insuficiente');
   }
   
-  const foodExpense = getCategoryTotal('alimentacao');
+  // Food expense ratio (15 points)
+  const foodExpense = AppState.getCategoryTotal('alimentacao');
   if (totalDebit > 0 && foodExpense <= totalDebit * 0.3) {
     score += 15;
     details.push('✅ Alimentação ≤ 30% dos gastos');
@@ -1211,7 +1198,176 @@ function calculateScore() {
 // ============================================
 // RENDERIZAÇÃO
 // ============================================
-let currentTransactionFilter = 'all';
+let currentSearchTerm = '';
+
+function renderApp() {
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="header">
+      <div class="header-left">
+        <button class="menu-btn" id="menuBtn">☰</button>
+        <div>
+          <div class="header-logo">FinançaFamiliar</div>
+          <div class="header-sub" id="headerSub"></div>
+        </div>
+      </div>
+      <div class="header-balance">
+        <div class="header-balance-label">Saldo</div>
+        <div class="header-balance-value" id="headerBalance"></div>
+      </div>
+    </div>
+    
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h2>📊 Menu</h2>
+        <p>FinançaFamiliar v4.0</p>
+      </div>
+      <div class="sidebar-nav">
+        <button class="sidebar-item" data-page="transactions">
+          <span class="sidebar-icon">📋</span>
+          <span>Transações</span>
+        </button>
+        <button class="sidebar-item" data-page="budget">
+          <span class="sidebar-icon">🎯</span>
+          <span>Orçamento</span>
+        </button>
+        <button class="sidebar-item" data-page="family">
+          <span class="sidebar-icon">👨‍👩‍👧</span>
+          <span>Família</span>
+        </button>
+        <button class="sidebar-item" data-page="tips">
+          <span class="sidebar-icon">💡</span>
+          <span>Dicas</span>
+        </button>
+        <button class="sidebar-item" data-page="reports">
+          <span class="sidebar-icon">📈</span>
+          <span>Relatórios</span>
+        </button>
+        <button class="sidebar-item" data-page="config">
+          <span class="sidebar-icon">⚙️</span>
+          <span>Configurações</span>
+        </button>
+      </div>
+      <div class="sidebar-footer">
+        <span>💰 Controle financeiro inteligente</span>
+      </div>
+    </div>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    
+    <div class="content">
+      <div class="page active" id="page-dashboard"></div>
+      <div class="page" id="page-transactions"></div>
+      <div class="page" id="page-budget"></div>
+      <div class="page" id="page-family"></div>
+      <div class="page" id="page-tips"></div>
+      <div class="page" id="page-reports"></div>
+      <div class="page" id="page-config"></div>
+    </div>
+    
+    <nav class="bottom-nav">
+      <button class="nav-btn" data-nav="dashboard">
+        <span class="nav-icon">📊</span>
+        <span>Início</span>
+      </button>
+      <button class="nav-btn nav-add" data-nav="add">
+        <span class="nav-icon">➕</span>
+        <span>Lançar</span>
+      </button>
+      <button class="nav-btn" data-nav="reports">
+        <span class="nav-icon">📈</span>
+        <span>Dados</span>
+      </button>
+    </nav>
+    
+    <div class="modal-bg" id="modalQuick">
+      <div class="modal">
+        <div class="modal-title">Lançamento Rápido <button class="modal-close" data-modal-close="modalQuick">✕</button></div>
+        <div class="field"><label>Descrição</label><input id="quickDesc" placeholder="Ex: iFood, Uber..." /></div>
+        <div class="field"><label>Valor (R$)</label><input id="quickAmount" type="number" step="0.01" placeholder="0,00" /></div>
+        <div class="field"><label>Tipo</label><div class="toggle-row" id="quickTypeToggle"></div></div>
+        <div class="field"><label>Categoria</label><div class="cat-grid" id="quickCatGrid"></div></div>
+        <button class="btn btn-accent" data-action="quick-add">Adicionar</button>
+      </div>
+    </div>
+    
+    <div class="modal-bg" id="modalGoal">
+      <div class="modal">
+        <div class="modal-title">Nova Meta <button class="modal-close" data-modal-close="modalGoal">✕</button></div>
+        <div class="field"><label>Nome da Meta</label><input id="goalName" placeholder="Ex: Viagem, Carro novo..." /></div>
+        <div class="field"><label>Valor Alvo (R$)</label><input id="goalTarget" type="number" placeholder="0,00" /></div>
+        <div class="field"><label>Valor Inicial (R$)</label><input id="goalCurrent" type="number" placeholder="0,00" /></div>
+        <div class="field"><label>Prazo</label><input id="goalDeadline" type="month" /></div>
+        <button class="btn btn-accent" data-action="add-goal">Criar Meta</button>
+      </div>
+    </div>
+    
+    <div class="modal-bg" id="modalMember">
+      <div class="modal">
+        <div class="modal-title">Novo Membro <button class="modal-close" data-modal-close="modalMember">✕</button></div>
+        <div class="field"><label>Nome</label><input id="memberName" placeholder="Ex: Maria, João..." /></div>
+        <div class="field"><label>Limite Mensal (R$)</label><input id="memberLimit" type="number" placeholder="0,00" /></div>
+        <button class="btn btn-accent" data-action="add-member">Adicionar Membro</button>
+      </div>
+    </div>
+    
+    <div class="modal-bg" id="modalContribution">
+      <div class="modal">
+        <div class="modal-title">Registrar Aporte <button class="modal-close" data-modal-close="modalContribution">✕</button></div>
+        <div id="contributionGoalName" style="font-size:14px;color:var(--text-muted);margin-bottom:16px;"></div>
+        <div class="field"><label>Valor do Aporte (R$)</label><input id="contributionAmount" type="number" placeholder="0,00" /></div>
+        <button class="btn btn-accent" data-action="add-contribution">Confirmar Aporte</button>
+      </div>
+    </div>
+    
+    <div class="modal-bg" id="modalConfirm">
+      <div class="modal">
+        <div class="modal-title">⚠️ Confirmar <button class="modal-close" data-modal-close="modalConfirm">✕</button></div>
+        <div id="confirmMessage" style="font-size:14px;color:var(--text-muted);margin-bottom:20px;"></div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <button class="btn btn-danger" id="confirmYesBtn">Confirmar</button>
+          <button class="btn btn-ghost" data-modal-close="modalConfirm">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  setupQuickAddUI();
+  updateHeader();
+  renderCurrentPage();
+}
+
+function setupQuickAddUI() {
+  const quickTypeDiv = document.getElementById('quickTypeToggle');
+  if (quickTypeDiv) {
+    quickTypeDiv.innerHTML = `
+      <button class="toggle-btn active-red active" data-quick-type="debit">💸 Despesa</button>
+      <button class="toggle-btn" data-quick-type="credit">💰 Receita</button>
+    `;
+  }
+  
+  const quickCatGrid = document.getElementById('quickCatGrid');
+  if (quickCatGrid) {
+    quickCatGrid.innerHTML = CATEGORIES.filter(c => c.id !== 'renda').map(cat => `
+      <button class="cat-btn" data-quick-cat="${cat.id}" style="color:${cat.color}">
+        <span class="ci">${cat.icon}</span>
+        <span class="cl">${cat.label}</span>
+      </button>
+    `).join('');
+  }
+}
+
+function updateHeader() {
+  const headerSub = document.getElementById('headerSub');
+  const headerBalance = document.getElementById('headerBalance');
+  if (headerSub) {
+    headerSub.textContent = `${AppState.config.familyName} · ${AppState.transactions.length} transações`;
+  }
+  if (headerBalance) {
+    const balance = AppState.getBalance();
+    headerBalance.textContent = Utils.formatCurrency(balance);
+    headerBalance.style.color = balance >= 0 ? 'var(--accent)' : 'var(--danger)';
+  }
+}
 
 function renderCurrentPage() {
   const pageId = AppState.ui.currentPage;
@@ -1231,40 +1387,30 @@ function renderCurrentPage() {
     else btn.classList.remove('active');
   });
   
-  // Render specific page
-  const renderers = {
-    dashboard: renderDashboard,
-    transactions: renderTransactions,
-    budget: renderBudget,
-    family: renderFamily,
-    tips: renderTips,
-    reports: renderReports,
-    config: renderConfig
-  };
+  // Show only current page
+  document.querySelectorAll('.page').forEach(page => {
+    page.classList.remove('active');
+  });
+  pageContainer.classList.add('active');
   
-  if (renderers[pageId]) {
-    renderers[pageId](pageContainer);
+  // Render specific page
+  switch(pageId) {
+    case 'dashboard': renderDashboard(); break;
+    case 'transactions': renderTransactions(); break;
+    case 'budget': renderBudget(); break;
+    case 'family': renderFamily(); break;
+    case 'tips': renderTips(); break;
+    case 'reports': renderReports(); break;
+    case 'config': renderConfig(); break;
   }
   
   updateHeader();
 }
 
-function updateHeader() {
-  const headerSub = document.getElementById('headerSub');
-  const headerBalance = document.getElementById('headerBalance');
-  if (headerSub) {
-    headerSub.textContent = `${AppState.config.familyName} · ${AppState.transactions.length} transações`;
-  }
-  if (headerBalance) {
-    const balance = getBalance();
-    headerBalance.textContent = Utils.formatCurrency(balance);
-    headerBalance.style.color = balance >= 0 ? 'var(--accent)' : 'var(--danger)';
-  }
-}
-
-function renderDashboard(container) {
-  const totalCredit = getTotalCredit();
-  const totalDebit = getTotalDebit();
+function renderDashboard() {
+  const container = document.getElementById('page-dashboard');
+  const totalCredit = AppState.getTotalCredit();
+  const totalDebit = AppState.getTotalDebit();
   const score = calculateScore();
   
   container.innerHTML = `
@@ -1332,22 +1478,28 @@ function renderDashboard(container) {
   }
 }
 
-function renderTransactions(container) {
+function renderTransactions() {
+  const container = document.getElementById('page-transactions');
+  const filter = AppState.ui.transactionFilter;
   let filtered = [...AppState.transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
   
-  if (currentTransactionFilter === 'credit') {
+  if (filter === 'credit') {
     filtered = filtered.filter(t => t.type === 'credit');
-  } else if (currentTransactionFilter === 'debit') {
+  } else if (filter === 'debit') {
     filtered = filtered.filter(t => t.type === 'debit');
-  } else if (currentTransactionFilter !== 'all') {
-    filtered = filtered.filter(t => t.category === currentTransactionFilter);
+  } else if (filter !== 'all') {
+    filtered = filtered.filter(t => t.category === filter);
+  }
+  
+  if (currentSearchTerm) {
+    filtered = filtered.filter(t => t.description.toLowerCase().includes(currentSearchTerm.toLowerCase()));
   }
   
   const totalCredit = filtered.filter(t => t.type === 'credit').reduce((s, t) => s + t.amount, 0);
   const totalDebit = filtered.filter(t => t.type === 'debit').reduce((s, t) => s + t.amount, 0);
   
   container.innerHTML = `
-    <input class="search-bar" id="transactionSearch" placeholder="🔍 Buscar transação..." />
+    <input class="search-bar" id="transactionSearch" placeholder="🔍 Buscar transação..." value="${currentSearchTerm}" />
     <div class="chips" id="filterChips"></div>
     <div class="card" style="padding:10px 4px;">
       <div style="padding:4px 16px 12px;font-size:12px;color:var(--text-muted);">
@@ -1370,7 +1522,7 @@ function renderTransactions(container) {
   const chipsDiv = document.getElementById('filterChips');
   if (chipsDiv) {
     chipsDiv.innerHTML = filters.map(f => `
-      <button class="chip ${currentTransactionFilter === f.id ? 'active' : ''}" data-filter="${f.id}">${f.label}</button>
+      <button class="chip ${filter === f.id ? 'active' : ''}" data-filter="${f.id}">${f.label}</button>
     `).join('');
   }
   
@@ -1394,7 +1546,7 @@ function renderTransactions(container) {
               ${tx.type === 'credit' ? '+' : '-'}${Utils.formatCurrency(tx.amount)}
             </div>
           </div>
-          <div class="tx-detail" id="detail-${tx.id}">
+          <div class="tx-detail" id="detail-${tx.id.replace(/[^a-zA-Z0-9]/g, '_')}">
             ${CATEGORIES.filter(c => c.id !== 'renda').map(c => `
               <button class="cat-chip" data-change-cat="${tx.id}|${c.id}" style="background:${tx.category === c.id ? c.color + '33' : 'var(--border)'};color:${tx.category === c.id ? c.color : 'var(--text-muted)'}">
                 ${c.icon} ${c.label}
@@ -1407,26 +1559,24 @@ function renderTransactions(container) {
     }
   }
   
-  // Search
+  // Setup search listener (only once)
   const searchInput = document.getElementById('transactionSearch');
-  if (searchInput) {
-    searchInput.addEventListener('input', Utils.debounce((e) => {
-      const term = e.target.value.toLowerCase();
-      const items = document.querySelectorAll('.tx-item');
-      items.forEach(item => {
-        const desc = item.querySelector('.tx-desc')?.textContent.toLowerCase() || '';
-        item.style.display = desc.includes(term) ? 'flex' : 'none';
-      });
-    }, 300));
+  if (searchInput && !searchInput.hasListener) {
+    searchInput.hasListener = true;
+    searchInput.addEventListener('input', (e) => {
+      currentSearchTerm = e.target.value;
+      renderTransactions();
+    });
   }
 }
 
-function renderBudget(container) {
-  const monthlyIncome = AppState.config.monthlyIncome || getTotalCredit() || 1;
-  const totalDebit = getTotalDebit();
-  const balance = getBalance();
-  const needs = ['moradia', 'alimentacao', 'saude', 'transporte'].reduce((sum, cat) => sum + getCategoryTotal(cat), 0);
-  const wants = ['lazer', 'assinaturas', 'educacao'].reduce((sum, cat) => sum + getCategoryTotal(cat), 0);
+function renderBudget() {
+  const container = document.getElementById('page-budget');
+  const monthlyIncome = AppState.config.monthlyIncome || AppState.getTotalCredit() || 1;
+  const totalDebit = AppState.getTotalDebit();
+  const balance = AppState.getBalance();
+  const needs = ['moradia', 'alimentacao', 'saude', 'transporte'].reduce((sum, cat) => sum + AppState.getCategoryTotal(cat), 0);
+  const wants = ['lazer', 'assinaturas', 'educacao'].reduce((sum, cat) => sum + AppState.getCategoryTotal(cat), 0);
   const savings = Math.max(0, balance);
   
   container.innerHTML = `
@@ -1479,8 +1629,8 @@ function renderBudget(container) {
   const limitsDiv = document.getElementById('categoryLimits');
   if (limitsDiv) {
     limitsDiv.innerHTML = CATEGORIES.filter(c => c.id !== 'renda').map(cat => {
-      const spent = getCategoryTotal(cat.id);
-      const limit = getCategoryLimit(cat.id);
+      const spent = AppState.getCategoryTotal(cat.id);
+      const limit = AppState.getCategoryLimit(cat.id);
       const percentage = Utils.calculatePercentage(spent, limit);
       const isOver = spent > limit && limit > 0;
       return `
@@ -1500,7 +1650,7 @@ function renderBudget(container) {
     }).join('');
   }
   
-  // Goals
+  // Goals list
   renderGoalsList();
 }
 
@@ -1518,7 +1668,7 @@ function renderGoalsList() {
     return `
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <div style="font-size:14px;font-weight:700">🎯 ${goal.name}</div>
+          <div style="font-size:14px;font-weight:700">🎯 ${Utils.escapeHtml(goal.name)}</div>
           <div style="display:flex;gap:6px">
             <button class="btn btn-accent" style="width:auto;padding:4px 10px;font-size:11px" data-contribute-goal="${goal.id}">+ Aporte</button>
             <button class="btn btn-danger" style="width:auto;padding:4px 10px;font-size:11px" data-delete-goal="${goal.id}">🗑️</button>
@@ -1537,7 +1687,8 @@ function renderGoalsList() {
   }).join('');
 }
 
-function renderFamily(container) {
+function renderFamily() {
+  const container = document.getElementById('page-family');
   container.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;">
       <div class="section-title">👨‍👩‍👧 Membros</div>
@@ -1556,7 +1707,7 @@ function renderFamily(container) {
       membersDiv.innerHTML = '<div class="card" style="text-align:center;color:var(--text-muted)">Nenhum membro cadastrado</div>';
     } else {
       membersDiv.innerHTML = AppState.members.map(member => {
-        const spent = getMemberSpending(member.id);
+        const spent = AppState.getMemberSpending(member.id);
         const percentage = Utils.calculatePercentage(spent, member.limit);
         const colors = ['#00e5a0', '#a78bfa', '#38bdf8', '#fb923c', '#f472b6'];
         const color = colors[Math.floor(Math.random() * colors.length)];
@@ -1568,7 +1719,7 @@ function renderFamily(container) {
               </div>
               <div style="flex:1">
                 <div style="display:flex;justify-content:space-between;margin-bottom:6px">
-                  <span style="font-size:15px;font-weight:700">${member.name}</span>
+                  <span style="font-size:15px;font-weight:700">${Utils.escapeHtml(member.name)}</span>
                   <button class="btn btn-danger" style="width:auto;padding:4px 8px;font-size:11px" data-delete-member="${member.id}">Remover</button>
                 </div>
                 <div style="font-size:13px;color:var(--text-muted);margin-bottom:4px">
@@ -1601,7 +1752,8 @@ function renderFamily(container) {
   }
 }
 
-function renderTips(container) {
+function renderTips() {
+  const container = document.getElementById('page-tips');
   const score = calculateScore();
   const tips = generateTips();
   
@@ -1662,8 +1814,8 @@ function renderTips(container) {
 
 function generateTips() {
   const tips = [];
-  const balance = getBalance();
-  const totalDebit = getTotalDebit();
+  const balance = AppState.getBalance();
+  const totalDebit = AppState.getTotalDebit();
   
   if (balance < 0) {
     tips.push({
@@ -1674,7 +1826,7 @@ function generateTips() {
     });
   }
   
-  const foodExpense = getCategoryTotal('alimentacao');
+  const foodExpense = AppState.getCategoryTotal('alimentacao');
   if (foodExpense > 1500) {
     tips.push({
       icon: '🍽️',
@@ -1684,7 +1836,7 @@ function generateTips() {
     });
   }
   
-  const subscriptions = getCategoryTotal('assinaturas');
+  const subscriptions = AppState.getCategoryTotal('assinaturas');
   if (subscriptions > 200) {
     tips.push({
       icon: '📱',
@@ -1706,18 +1858,19 @@ function generateTips() {
   return tips;
 }
 
-function renderReports(container) {
+function renderReports() {
+  const container = document.getElementById('page-reports');
   container.innerHTML = `
     <div class="card">
       <div class="section-title">📊 Receitas vs Despesas</div>
       <div style="display:flex;justify-content:space-around;align-items:center;padding:20px 0">
         <div style="text-align:center">
-          <div style="font-size:32px;font-weight:700;color:var(--accent)">${Utils.formatCurrency(getTotalCredit())}</div>
+          <div style="font-size:32px;font-weight:700;color:var(--accent)">${Utils.formatCurrency(AppState.getTotalCredit())}</div>
           <div style="font-size:12px;color:var(--text-muted);margin-top:4px">Receitas</div>
         </div>
         <div style="width:1px;height:40px;background:var(--border)"></div>
         <div style="text-align:center">
-          <div style="font-size:32px;font-weight:700;color:var(--danger)">${Utils.formatCurrency(getTotalDebit())}</div>
+          <div style="font-size:32px;font-weight:700;color:var(--danger)">${Utils.formatCurrency(AppState.getTotalDebit())}</div>
           <div style="font-size:12px;color:var(--text-muted);margin-top:4px">Despesas</div>
         </div>
       </div>
@@ -1729,13 +1882,14 @@ function renderReports(container) {
     </div>
     
     <button class="btn btn-ghost" data-action="export-csv">⬇️ Exportar CSV</button>
+    <button class="btn btn-ghost" data-action="export-json">📤 Exportar Backup</button>
   `;
   
   const categoriesDiv = document.getElementById('reportCategories');
   if (categoriesDiv) {
-    const totalDebit = getTotalDebit();
+    const totalDebit = AppState.getTotalDebit();
     categoriesDiv.innerHTML = CATEGORIES.filter(c => c.id !== 'renda').map(cat => {
-      const amount = getCategoryTotal(cat.id);
+      const amount = AppState.getCategoryTotal(cat.id);
       const percentage = Utils.calculatePercentage(amount, totalDebit);
       return `
         <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
@@ -1749,11 +1903,12 @@ function renderReports(container) {
   }
 }
 
-function renderConfig(container) {
+function renderConfig() {
+  const container = document.getElementById('page-config');
   container.innerHTML = `
     <div class="card">
       <div class="section-title">👤 Perfil da Família</div>
-      <div class="field"><label>Nome da Família</label><input id="configName" value="${AppState.config.familyName}" /></div>
+      <div class="field"><label>Nome da Família</label><input id="configName" value="${Utils.escapeHtml(AppState.config.familyName)}" /></div>
       <div class="field"><label>Renda Mensal (R$)</label><input id="configIncome" type="number" value="${AppState.config.monthlyIncome}" /></div>
       <div class="field"><label>Reserva de Emergência (R$)</label><input id="configEmergency" type="number" value="${AppState.config.emergencyFund}" /></div>
       <div id="emergencyInfo" style="font-size:12px;color:var(--text-muted);margin-top:4px"></div>
@@ -1767,13 +1922,12 @@ function renderConfig(container) {
     <div class="card">
       <div class="section-title">💾 Dados</div>
       <div style="display:flex;flex-direction:column;gap:10px">
-        <button class="btn btn-ghost" data-action="export-json">📤 Exportar Backup</button>
         <button class="btn btn-danger" data-action="clear-data">🗑️ Limpar Todos os Dados</button>
       </div>
     </div>
   `;
   
-  const totalDebit = getTotalDebit();
+  const totalDebit = AppState.getTotalDebit();
   const emergencyInfo = document.getElementById('emergencyInfo');
   if (emergencyInfo) {
     const months = totalDebit > 0 ? (AppState.config.emergencyFund / totalDebit).toFixed(1) : 0;
@@ -1786,7 +1940,7 @@ function renderConfig(container) {
       <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
         <span style="font-size:18px">${cat.icon}</span>
         <span style="flex:1;font-size:13px">${cat.label}</span>
-        <input type="number" class="limit-input" data-category="${cat.id}" value="${getCategoryLimit(cat.id)}" style="width:100px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);text-align:right" />
+        <input type="number" class="limit-input" data-category="${cat.id}" value="${AppState.getCategoryLimit(cat.id)}" style="width:100px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);text-align:right" />
       </div>
     `).join('');
   }
@@ -1823,6 +1977,7 @@ function toggleSidebar() {
 // MODAL FUNCTIONS
 // ============================================
 let pendingGoalId = null;
+let pendingConfirmCallback = null;
 
 function openModal(modalId) {
   const modal = document.getElementById(modalId);
@@ -1840,15 +1995,11 @@ function closeModal(modalId) {
   }
 }
 
-function showConfirm(message, onConfirm) {
+function showConfirm(message, callback) {
   const confirmMsg = document.getElementById('confirmMessage');
   if (confirmMsg) confirmMsg.textContent = message;
-  
-  const modal = document.getElementById('modalConfirm');
-  if (modal) {
-    modal.dataset.onConfirm = onConfirm;
-    openModal('modalConfirm');
-  }
+  pendingConfirmCallback = callback;
+  openModal('modalConfirm');
 }
 
 function showToast(message) {
@@ -1860,11 +2011,25 @@ function showToast(message) {
   }
   toast.textContent = message;
   toast.style.opacity = '1';
-  clearTimeout(toast._timeout);
-  toast._timeout = setTimeout(() => {
+  
+  if (window.toastTimeout) clearTimeout(window.toastTimeout);
+  window.toastTimeout = setTimeout(() => {
     toast.style.opacity = '0';
   }, 3000);
 }
+
+// ============================================
+// ESCAPE HTML
+// ============================================
+Utils.escapeHtml = function(str) {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+};
 
 // ============================================
 // EXPORT FUNCTIONS
@@ -1873,7 +2038,7 @@ function exportCSV() {
   const rows = ['Data,Descrição,Valor,Tipo,Categoria,Membro'];
   AppState.transactions.forEach(tx => {
     const member = AppState.members.find(m => m.id === tx.memberId);
-    rows.push(`${tx.date},"${tx.description}",${tx.type === 'debit' ? -tx.amount : tx.amount},${tx.type === 'debit' ? 'Despesa' : 'Receita'},${CATEGORIES.find(c => c.id === tx.category)?.label || tx.category},${member?.name || ''}`);
+    rows.push(`"${tx.date}","${tx.description.replace(/"/g, '""')}",${tx.type === 'debit' ? -tx.amount : tx.amount},${tx.type === 'debit' ? 'Despesa' : 'Receita'},"${CATEGORIES.find(c => c.id === tx.category)?.label || tx.category}","${member?.name || ''}"`);
   });
   const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
@@ -1901,6 +2066,25 @@ function exportJSON() {
   showToast('✅ Backup exportado!');
 }
 
+function clearAllData() {
+  showConfirm('Todos os dados serão apagados permanentemente! Esta ação não pode ser desfeita.', () => {
+    localStorage.removeItem('financa_familiar_v4');
+    AppState.transactions = JSON.parse(JSON.stringify(DEMO_TRANSACTIONS));
+    AppState.members = [];
+    AppState.goals = [];
+    AppState.config = { familyName: 'Minha Família', monthlyIncome: 8500, emergencyFund: 0 };
+    AppState.categoryLimits = {};
+    AppState.ui.transactionFilter = 'all';
+    currentSearchTerm = '';
+    CATEGORIES.forEach(cat => {
+      AppState.categoryLimits[cat.id] = cat.defaultLimit;
+    });
+    AppState.save();
+    renderCurrentPage();
+    showToast('Dados reiniciados!');
+  });
+}
+
 // ============================================
 // EVENT DELEGATION
 // ============================================
@@ -1921,7 +2105,9 @@ function setupEventDelegation() {
     // Sidebar navigation
     const sidebarItem = e.target.closest('.sidebar-item');
     if (sidebarItem && sidebarItem.dataset.page) {
-      setCurrentPage(sidebarItem.dataset.page);
+      AppState.setCurrentPage(sidebarItem.dataset.page);
+      closeSidebar();
+      renderCurrentPage();
       return;
     }
     
@@ -1931,7 +2117,8 @@ function setupEventDelegation() {
       if (navBtn.dataset.nav === 'add') {
         openModal('modalQuick');
       } else {
-        setCurrentPage(navBtn.dataset.nav);
+        AppState.setCurrentPage(navBtn.dataset.nav);
+        renderCurrentPage();
       }
       return;
     }
@@ -1953,7 +2140,9 @@ function setupEventDelegation() {
     // Transaction detail toggle
     const txItem = e.target.closest('.tx-item');
     if (txItem && !e.target.closest('.cat-chip')) {
-      const detail = document.getElementById(`detail-${txItem.dataset.transactionId}`);
+      const txId = txItem.dataset.transactionId;
+      const detailId = `detail-${txId.replace(/[^a-zA-Z0-9]/g, '_')}`;
+      const detail = document.getElementById(detailId);
       if (detail) detail.classList.toggle('open');
       return;
     }
@@ -1961,8 +2150,8 @@ function setupEventDelegation() {
     // Filter transactions
     const filterBtn = e.target.closest('[data-filter]');
     if (filterBtn) {
-      currentTransactionFilter = filterBtn.dataset.filter;
-      renderTransactions(document.getElementById('page-transactions'));
+      AppState.setTransactionFilter(filterBtn.dataset.filter);
+      renderTransactions();
       return;
     }
     
@@ -1970,7 +2159,9 @@ function setupEventDelegation() {
     const changeCat = e.target.closest('[data-change-cat]');
     if (changeCat) {
       const [txId, catId] = changeCat.dataset.changeCat.split('|');
-      updateTransactionCategory(txId, catId);
+      AppState.updateTransactionCategory(txId, catId);
+      renderTransactions();
+      showToast('Categoria atualizada!');
       return;
     }
     
@@ -1978,23 +2169,32 @@ function setupEventDelegation() {
     const deleteTx = e.target.closest('[data-delete-tx]');
     if (deleteTx) {
       const txId = deleteTx.dataset.deleteTx;
-      showConfirm('Deseja excluir esta transação?', () => deleteTransaction(txId));
+      const tx = AppState.transactions.find(t => t.id === txId);
+      showConfirm(`Deseja excluir a transação "${tx?.description}"?`, () => {
+        AppState.deleteTransaction(txId);
+        renderTransactions();
+        showToast('Transação excluída!');
+      });
       return;
     }
     
     // Quick add
     if (e.target.closest('[data-action="quick-add"]')) {
       const desc = document.getElementById('quickDesc')?.value.trim();
-      const amount = parseFloat(document.getElementById('quickAmount')?.value);
+      const amount = Utils.parseNumber(document.getElementById('quickAmount')?.value);
       const type = document.querySelector('[data-quick-type].active')?.dataset.quickType || 'debit';
       const category = document.querySelector('[data-quick-cat].selected')?.dataset.quickCat || 'outros';
       
-      if (!desc || !amount || amount <= 0) {
-        showToast('⚠️ Preencha descrição e valor válido');
+      if (!desc) {
+        showToast('⚠️ Preencha a descrição');
+        return;
+      }
+      if (amount <= 0) {
+        showToast('⚠️ Digite um valor válido');
         return;
       }
       
-      addTransaction({
+      AppState.addTransaction({
         date: Utils.getTodayISO(),
         description: desc,
         amount: amount,
@@ -2006,6 +2206,8 @@ function setupEventDelegation() {
       closeModal('modalQuick');
       document.getElementById('quickDesc').value = '';
       document.getElementById('quickAmount').value = '';
+      renderCurrentPage();
+      showToast('✅ Transação adicionada!');
       return;
     }
     
@@ -2018,21 +2220,27 @@ function setupEventDelegation() {
     // Add goal
     if (e.target.closest('[data-action="add-goal"]')) {
       const name = document.getElementById('goalName')?.value.trim();
-      const target = parseFloat(document.getElementById('goalTarget')?.value);
-      const current = parseFloat(document.getElementById('goalCurrent')?.value) || 0;
+      const target = Utils.parseNumber(document.getElementById('goalTarget')?.value);
+      const current = Utils.parseNumber(document.getElementById('goalCurrent')?.value);
       const deadline = document.getElementById('goalDeadline')?.value;
       
-      if (!name || !target || target <= 0) {
-        showToast('⚠️ Preencha nome e valor alvo');
+      if (!name) {
+        showToast('⚠️ Digite o nome da meta');
+        return;
+      }
+      if (target <= 0) {
+        showToast('⚠️ Digite um valor alvo válido');
         return;
       }
       
-      addGoal({ name, targetAmount: target, currentAmount: current, deadline });
+      AppState.addGoal({ name, targetAmount: target, currentAmount: current, deadline });
       closeModal('modalGoal');
       document.getElementById('goalName').value = '';
       document.getElementById('goalTarget').value = '';
       document.getElementById('goalCurrent').value = '';
       document.getElementById('goalDeadline').value = '';
+      renderBudget();
+      showToast('✅ Meta criada!');
       return;
     }
     
@@ -2051,15 +2259,17 @@ function setupEventDelegation() {
     
     // Add contribution
     if (e.target.closest('[data-action="add-contribution"]')) {
-      const amount = parseFloat(document.getElementById('contributionAmount')?.value);
-      if (!amount || amount <= 0) {
+      const amount = Utils.parseNumber(document.getElementById('contributionAmount')?.value);
+      if (amount <= 0) {
         showToast('⚠️ Digite um valor válido');
         return;
       }
       if (pendingGoalId) {
-        addGoalContribution(pendingGoalId, amount);
+        AppState.addGoalContribution(pendingGoalId, amount);
         closeModal('modalContribution');
         pendingGoalId = null;
+        renderBudget();
+        showToast('✅ Aporte registrado!');
       }
       return;
     }
@@ -2068,7 +2278,12 @@ function setupEventDelegation() {
     const deleteGoalBtn = e.target.closest('[data-delete-goal]');
     if (deleteGoalBtn) {
       const goalId = deleteGoalBtn.dataset.deleteGoal;
-      showConfirm('Deseja excluir esta meta?', () => deleteGoal(goalId));
+      const goal = AppState.goals.find(g => g.id === goalId);
+      showConfirm(`Deseja excluir a meta "${goal?.name}"?`, () => {
+        AppState.deleteGoal(goalId);
+        renderBudget();
+        showToast('Meta excluída!');
+      });
       return;
     }
     
@@ -2081,17 +2296,22 @@ function setupEventDelegation() {
     // Add member
     if (e.target.closest('[data-action="add-member"]')) {
       const name = document.getElementById('memberName')?.value.trim();
-      const limit = parseFloat(document.getElementById('memberLimit')?.value) || 0;
+      const limit = Utils.parseNumber(document.getElementById('memberLimit')?.value);
       
       if (!name) {
         showToast('⚠️ Digite o nome do membro');
         return;
       }
       
-      addMember({ name, limit });
-      closeModal('modalMember');
-      document.getElementById('memberName').value = '';
-      document.getElementById('memberLimit').value = '';
+      if (AppState.addMember({ name, limit })) {
+        closeModal('modalMember');
+        document.getElementById('memberName').value = '';
+        document.getElementById('memberLimit').value = '';
+        renderFamily();
+        showToast('✅ Membro adicionado!');
+      } else {
+        showToast('⚠️ Membro já existe!');
+      }
       return;
     }
     
@@ -2099,7 +2319,12 @@ function setupEventDelegation() {
     const deleteMemberBtn = e.target.closest('[data-delete-member]');
     if (deleteMemberBtn) {
       const memberId = deleteMemberBtn.dataset.deleteMember;
-      showConfirm('Remover este membro? As transações vinculadas ficarão sem vínculo.', () => deleteMember(memberId));
+      const member = AppState.members.find(m => m.id === memberId);
+      showConfirm(`Remover "${member?.name}"? As transações vinculadas ficarão sem vínculo.`, () => {
+        AppState.deleteMember(memberId);
+        renderFamily();
+        showToast('Membro removido!');
+      });
       return;
     }
     
@@ -2117,24 +2342,17 @@ function setupEventDelegation() {
     
     // Clear data
     if (e.target.closest('[data-action="clear-data"]')) {
-      showConfirm('Todos os dados serão apagados permanentemente!', () => {
-        clearAllData();
-        showToast('Dados reiniciados!');
-      });
+      clearAllData();
       return;
     }
     
     // Confirm action
-    if (e.target.closest('[data-action="confirm-yes"]')) {
-      const modal = document.getElementById('modalConfirm');
-      const onConfirm = modal?.dataset.onConfirm;
-      if (onConfirm && typeof window[onConfirm] === 'function') {
-        window[onConfirm]();
-      } else if (onConfirm) {
-        eval(onConfirm);
+    if (e.target.closest('#confirmYesBtn')) {
+      if (pendingConfirmCallback) {
+        pendingConfirmCallback();
+        pendingConfirmCallback = null;
       }
       closeModal('modalConfirm');
-      delete modal?.dataset.onConfirm;
       return;
     }
     
@@ -2142,20 +2360,25 @@ function setupEventDelegation() {
     const limitInput = e.target.closest('.limit-input');
     if (limitInput) {
       const category = limitInput.dataset.category;
-      const limit = parseFloat(limitInput.value) || 0;
-      updateCategoryLimit(category, limit);
+      const limit = Utils.parseNumber(limitInput.value);
+      AppState.updateCategoryLimit(category, limit);
       showToast('Limite atualizado!');
       return;
     }
     
     // Config save
-    const configInputs = ['configName', 'configIncome', 'configEmergency'];
-    if (configInputs.some(id => e.target.id === id)) {
-      updateConfig({
-        familyName: document.getElementById('configName')?.value || '',
-        monthlyIncome: parseFloat(document.getElementById('configIncome')?.value) || 0,
-        emergencyFund: parseFloat(document.getElementById('configEmergency')?.value) || 0
+    const configName = document.getElementById('configName');
+    const configIncome = document.getElementById('configIncome');
+    const configEmergency = document.getElementById('configEmergency');
+    
+    if (e.target === configName || e.target === configIncome || e.target === configEmergency) {
+      AppState.updateConfig({
+        familyName: configName?.value || '',
+        monthlyIncome: Utils.parseNumber(configIncome?.value),
+        emergencyFund: Utils.parseNumber(configEmergency?.value)
       });
+      updateHeader();
+      renderConfig();
       return;
     }
   });
@@ -2189,171 +2412,11 @@ function setupEventDelegation() {
 }
 
 // ============================================
-// RENDER APP HTML
-// ============================================
-function renderApp() {
-  const app = document.getElementById('app');
-  app.innerHTML = `
-    <!-- Header com menu hambúrguer -->
-    <div class="header">
-      <div class="header-left">
-        <button class="menu-btn" id="menuBtn">☰</button>
-        <div>
-          <div class="header-logo">FinançaFamiliar</div>
-          <div class="header-sub" id="headerSub"></div>
-        </div>
-      </div>
-      <div class="header-balance">
-        <div class="header-balance-label">Saldo</div>
-        <div class="header-balance-value" id="headerBalance"></div>
-      </div>
-    </div>
-    
-    <!-- Menu Lateral -->
-    <div class="sidebar" id="sidebar">
-      <div class="sidebar-header">
-        <h2>📊 Menu</h2>
-        <p>FinançaFamiliar v3.0</p>
-      </div>
-      <div class="sidebar-nav">
-        <button class="sidebar-item" data-page="transactions">
-          <span class="sidebar-icon">📋</span>
-          <span>Transações</span>
-        </button>
-        <button class="sidebar-item" data-page="budget">
-          <span class="sidebar-icon">🎯</span>
-          <span>Orçamento</span>
-        </button>
-        <button class="sidebar-item" data-page="family">
-          <span class="sidebar-icon">👨‍👩‍👧</span>
-          <span>Família</span>
-        </button>
-        <button class="sidebar-item" data-page="tips">
-          <span class="sidebar-icon">💡</span>
-          <span>Dicas</span>
-        </button>
-        <button class="sidebar-item" data-page="reports">
-          <span class="sidebar-icon">📈</span>
-          <span>Relatórios</span>
-        </button>
-        <button class="sidebar-item" data-page="config">
-          <span class="sidebar-icon">⚙️</span>
-          <span>Configurações</span>
-        </button>
-      </div>
-      <div class="sidebar-footer">
-        <span>💰 Controle financeiro inteligente</span>
-      </div>
-    </div>
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
-    
-    <!-- Content -->
-    <div class="content">
-      <div class="page active" id="page-dashboard"></div>
-      <div class="page" id="page-transactions"></div>
-      <div class="page" id="page-budget"></div>
-      <div class="page" id="page-family"></div>
-      <div class="page" id="page-tips"></div>
-      <div class="page" id="page-reports"></div>
-      <div class="page" id="page-config"></div>
-    </div>
-    
-    <!-- Bottom Navigation (apenas 3 botões) -->
-    <nav class="bottom-nav">
-      <button class="nav-btn" data-nav="dashboard">
-        <span class="nav-icon">📊</span>
-        <span>Início</span>
-      </button>
-      <button class="nav-btn nav-add" data-nav="add">
-        <span class="nav-icon">➕</span>
-        <span>Lançar</span>
-      </button>
-      <button class="nav-btn" data-nav="reports">
-        <span class="nav-icon">📈</span>
-        <span>Dados</span>
-      </button>
-    </nav>
-    
-    <!-- Modals -->
-    <div class="modal-bg" id="modalQuick">
-      <div class="modal">
-        <div class="modal-title">Lançamento Rápido <button class="modal-close" data-modal-close="modalQuick">✕</button></div>
-        <div class="field"><label>Descrição</label><input id="quickDesc" placeholder="Ex: iFood, Uber..." /></div>
-        <div class="field"><label>Valor (R$)</label><input id="quickAmount" type="number" step="0.01" placeholder="0,00" /></div>
-        <div class="field"><label>Tipo</label><div class="toggle-row" id="quickTypeToggle"></div></div>
-        <div class="field"><label>Categoria</label><div class="cat-grid" id="quickCatGrid"></div></div>
-        <button class="btn btn-accent" data-action="quick-add">Adicionar</button>
-      </div>
-    </div>
-    
-    <div class="modal-bg" id="modalGoal">
-      <div class="modal">
-        <div class="modal-title">Nova Meta <button class="modal-close" data-modal-close="modalGoal">✕</button></div>
-        <div class="field"><label>Nome da Meta</label><input id="goalName" placeholder="Ex: Viagem, Carro novo..." /></div>
-        <div class="field"><label>Valor Alvo (R$)</label><input id="goalTarget" type="number" placeholder="0,00" /></div>
-        <div class="field"><label>Valor Inicial (R$)</label><input id="goalCurrent" type="number" placeholder="0,00" /></div>
-        <div class="field"><label>Prazo</label><input id="goalDeadline" type="month" /></div>
-        <button class="btn btn-accent" data-action="add-goal">Criar Meta</button>
-      </div>
-    </div>
-    
-    <div class="modal-bg" id="modalMember">
-      <div class="modal">
-        <div class="modal-title">Novo Membro <button class="modal-close" data-modal-close="modalMember">✕</button></div>
-        <div class="field"><label>Nome</label><input id="memberName" placeholder="Ex: Maria, João..." /></div>
-        <div class="field"><label>Limite Mensal (R$)</label><input id="memberLimit" type="number" placeholder="0,00" /></div>
-        <button class="btn btn-accent" data-action="add-member">Adicionar Membro</button>
-      </div>
-    </div>
-    
-    <div class="modal-bg" id="modalContribution">
-      <div class="modal">
-        <div class="modal-title">Registrar Aporte <button class="modal-close" data-modal-close="modalContribution">✕</button></div>
-        <div id="contributionGoalName" style="font-size:14px;color:var(--text-muted);margin-bottom:16px;"></div>
-        <div class="field"><label>Valor do Aporte (R$)</label><input id="contributionAmount" type="number" placeholder="0,00" /></div>
-        <button class="btn btn-accent" data-action="add-contribution">Confirmar Aporte</button>
-      </div>
-    </div>
-    
-    <div class="modal-bg" id="modalConfirm">
-      <div class="modal">
-        <div class="modal-title">⚠️ Confirmar <button class="modal-close" data-modal-close="modalConfirm">✕</button></div>
-        <div id="confirmMessage" style="font-size:14px;color:var(--text-muted);margin-bottom:20px;"></div>
-        <div style="display:flex;flex-direction:column;gap:10px;">
-          <button class="btn btn-danger" data-action="confirm-yes">Confirmar</button>
-          <button class="btn btn-ghost" data-modal-close="modalConfirm">Cancelar</button>
-        </div>
-      </div>
-    </div>
-  `;
-  
-  // Setup quick add UI
-  const quickTypeDiv = document.getElementById('quickTypeToggle');
-  if (quickTypeDiv) {
-    quickTypeDiv.innerHTML = `
-      <button class="toggle-btn active-red active" data-quick-type="debit">💸 Despesa</button>
-      <button class="toggle-btn" data-quick-type="credit">💰 Receita</button>
-    `;
-  }
-  
-  const quickCatGrid = document.getElementById('quickCatGrid');
-  if (quickCatGrid) {
-    quickCatGrid.innerHTML = CATEGORIES.filter(c => c.id !== 'renda').map(cat => `
-      <button class="cat-btn" data-quick-cat="${cat.id}" style="color:${cat.color}">
-        <span class="ci">${cat.icon}</span>
-        <span class="cl">${cat.label}</span>
-      </button>
-    `).join('');
-  }
-}
-
-// ============================================
 // INITIALIZATION
 // ============================================
-loadState();
+AppState.load();
 renderApp();
 setupEventDelegation();
-renderCurrentPage();
 </script>
 </body>
 </html>
