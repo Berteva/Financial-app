@@ -5,7 +5,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black"/>
 <meta name="apple-mobile-web-app-title" content="FinançaFamiliar"/>
 <title>FinançaFamiliar</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
@@ -53,12 +53,12 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .page.active{display:flex;}
 
 /* NAV */
-.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(–surface);border-top:1px solid var(–border);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:100;height:var(–nav-h);}
-.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:var(–text-muted);font-size:9px;font-family:‘DM Sans’,sans-serif;cursor:pointer;padding:8px 4px;transition:color 0.2s;position:relative;}
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#111318;border-top:1px solid var(–border);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:999;height:var(–nav-h);box-shadow:0 -4px 24px rgba(0,0,0,0.7);}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:var(–text-muted);font-size:9px;font-family:‘DM Sans’,sans-serif;cursor:pointer;padding:8px 2px;transition:color 0.2s;position:relative;}
 .nav-btn.active{color:var(–accent);}
-.nav-btn .nav-icon{font-size:20px;line-height:1;}
+.nav-btn .nav-icon{font-size:18px;line-height:1;}
 .nav-btn::after{content:’’;position:absolute;top:0;left:50%;transform:translateX(-50%);width:0;height:2px;background:var(–accent);border-radius:0 0 2px 2px;transition:width 0.2s;}
-.nav-btn.active::after{width:32px;}
+.nav-btn.active::after{width:28px;}
 
 /* CARDS */
 .card{background:var(–surface);border:1px solid var(–border);border-radius:var(–radius);padding:18px 20px;}
@@ -140,7 +140,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .cat-btn.selected{border-color:currentColor;}
 
 /* FAB */
-.fab{position:fixed;bottom:calc(var(–nav-h) + 16px + env(safe-area-inset-bottom));right:20px;width:52px;height:52px;border-radius:50%;background:var(–accent);border:none;color:#000;font-size:26px;cursor:pointer;box-shadow:0 4px 20px rgba(0,229,160,0.4);z-index:90;display:flex;align-items:center;justify-content:center;transition:transform 0.2s;}
+.fab{position:fixed;bottom:calc(var(–nav-h) + 14px + env(safe-area-inset-bottom));right:20px;width:50px;height:50px;border-radius:50%;background:var(–accent);border:none;color:#000;font-size:24px;cursor:pointer;box-shadow:0 4px 20px rgba(0,229,160,0.4);z-index:998;display:flex;align-items:center;justify-content:center;transition:transform 0.2s;}
 .fab:active{transform:scale(0.92);}
 
 /* DONUT */
