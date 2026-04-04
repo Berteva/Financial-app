@@ -10,11 +10,15 @@
     <meta name="apple-mobile-web-app-title" content="FinançaFamiliar"/>
     <meta name="mobile-web-app-capable" content="yes"/>
     
-    <!-- Icons (Placeholder for user to replace if needed) -->
     <link rel="apple-touch-icon" href="https://via.placeholder.com/180/00e5a0/000000?text=FF"/>
     
     <title>FinançaFamiliar</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
+    
+    <!-- PDF.js Library para leitura real de arquivos PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+    
     <style>
         :root {
             --bg: #0a0c10;
@@ -70,7 +74,6 @@
             position: relative;
         }
 
-        /* HEADER */
         .header {
             background: var(--surface);
             border-bottom: 1px solid var(--border);
@@ -109,7 +112,6 @@
             letter-spacing: -0.5px;
         }
 
-        /* CONTENT */
         .content {
             flex: 1;
             overflow-y: auto;
@@ -127,7 +129,6 @@
             display: flex;
         }
 
-        /* NAV */
         .nav {
             position: fixed;
             bottom: 0;
@@ -182,39 +183,13 @@
         .nav-btn.active::after {
             width: 28px;
         }
-        .nav-btn.nav-add {
-            color: var(--accent);
-            font-weight: 700;
-        }
-        .nav-btn.nav-add .nav-icon {
-            font-size: 22px;
-        }
 
-        /* CARDS */
         .card {
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: var(--radius);
             padding: 18px 20px;
         }
-        .card-sm {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            padding: 14px 16px;
-        }
-        .grid2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-        .grid3 {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 10px;
-        }
-
-        /* STAT CARD */
         .stat-card {
             background: var(--surface);
             border: 1px solid var(--border);
@@ -227,9 +202,6 @@
             text-transform: uppercase;
             letter-spacing: 0.05em;
             margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
         }
         .stat-value {
             font-size: 22px;
@@ -242,7 +214,12 @@
             margin-top: 4px;
         }
 
-        /* PROGRESS BAR */
+        .grid2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
         .progress-wrap {
             height: 6px;
             background: var(--border);
@@ -255,7 +232,6 @@
             transition: width 0.6s ease;
         }
 
-        /* SECTION TITLE */
         .section-title {
             font-size: 12px;
             color: var(--text-muted);
@@ -264,7 +240,6 @@
             margin-bottom: 4px;
         }
 
-        /* TRANSACTION */
         .tx-item {
             display: flex;
             align-items: center;
@@ -308,135 +283,7 @@
             letter-spacing: -0.3px;
             flex-shrink: 0;
         }
-        .tx-detail {
-            display: none;
-            padding: 10px 0 4px 50px;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-        .tx-detail.open {
-            display: flex;
-        }
 
-        /* CATEGORY CHIP */
-        .cat-chip {
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
-            cursor: pointer;
-            border: 1px solid transparent;
-            transition: all 0.15s;
-        }
-
-        /* TIP CARD */
-        .tip-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 16px 18px;
-            display: flex;
-            gap: 14px;
-            border-left-width: 3px;
-        }
-        .tip-icon {
-            font-size: 24px;
-            flex-shrink: 0;
-        }
-        .tip-title {
-            font-size: 13px;
-            font-weight: 700;
-            margin-bottom: 4px;
-        }
-        .tip-text {
-            font-size: 12px;
-            color: var(--text-muted);
-            line-height: 1.6;
-        }
-
-        /* SCORE RING */
-        .score-wrap {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-        .score-ring-container {
-            position: relative;
-            width: 100px;
-            height: 100px;
-            flex-shrink: 0;
-        }
-        .score-ring-container svg {
-            transform: rotate(-90deg);
-        }
-        .score-center {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        .score-num {
-            font-size: 24px;
-            font-weight: 800;
-            font-family: 'Syne', sans-serif;
-        }
-        .score-label {
-            font-size: 9px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        /* MODAL */
-        .modal-bg {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.7);
-            z-index: 2000;
-            display: none;
-            align-items: flex-end;
-            justify-content: center;
-            backdrop-filter: blur(4px);
-        }
-        .modal-bg.open {
-            display: flex;
-        }
-        .modal {
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 24px 24px 0 0;
-            padding: 24px 20px;
-            padding-bottom: calc(24px + env(safe-area-inset-bottom));
-            width: 100%;
-            max-width: 480px;
-            max-height: 85vh;
-            overflow-y: auto;
-        }
-        .modal-title {
-            font-size: 17px;
-            font-weight: 700;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .modal-close {
-            background: var(--border);
-            border: none;
-            color: var(--text-muted);
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* FORM */
         .field {
             display: flex;
             flex-direction: column;
@@ -465,38 +312,7 @@
         .field input:focus, .field select:focus {
             border-color: var(--accent);
         }
-        .field select option {
-            background: var(--surface2);
-        }
-        .toggle-row {
-            display: flex;
-            gap: 8px;
-        }
-        .toggle-btn {
-            flex: 1;
-            padding: 11px;
-            border-radius: var(--radius-sm);
-            border: 1px solid var(--border);
-            background: none;
-            color: var(--text-muted);
-            font-size: 13px;
-            font-family: 'DM Sans', sans-serif;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.15s;
-        }
-        .toggle-btn.active {
-            background: var(--accent-dim);
-            border-color: var(--accent);
-            color: var(--accent);
-        }
-        .toggle-btn.active-red {
-            background: var(--danger-dim);
-            border-color: var(--danger);
-            color: var(--danger);
-        }
 
-        /* BUTTONS */
         .btn {
             padding: 13px 20px;
             border-radius: var(--radius-sm);
@@ -512,10 +328,6 @@
             background: var(--accent);
             color: #000;
         }
-        .btn-danger {
-            background: var(--danger);
-            color: #fff;
-        }
         .btn-ghost {
             background: var(--border);
             color: var(--text-muted);
@@ -524,68 +336,6 @@
             opacity: 0.8;
         }
 
-        /* CAT GRID */
-        .cat-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-        }
-        .cat-btn {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            padding: 10px 4px;
-            border-radius: var(--radius-sm);
-            border: 1px solid var(--border);
-            background: none;
-            cursor: pointer;
-            transition: all 0.15s;
-        }
-        .cat-btn .ci {
-            font-size: 20px;
-        }
-        .cat-btn .cl {
-            font-size: 9px;
-            color: var(--text-muted);
-            text-align: center;
-            line-height: 1.2;
-        }
-        .cat-btn.selected {
-            border-color: currentColor;
-        }
-
-        /* DONUT */
-        .donut-wrap {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-        .donut-legend {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 12px;
-        }
-        .legend-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 2px;
-            flex-shrink: 0;
-        }
-        .legend-val {
-            margin-left: auto;
-            font-weight: 600;
-            font-size: 11px;
-        }
-
-        /* UPLOAD AREA */
         .upload-area {
             border: 2px dashed var(--border);
             border-radius: var(--radius);
@@ -598,71 +348,6 @@
             border-color: var(--accent);
         }
 
-        /* FAMILY MEMBER */
-        .member-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 16px;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-        .member-avatar {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            font-weight: 700;
-            font-family: 'Syne', sans-serif;
-            flex-shrink: 0;
-        }
-
-        /* META */
-        .meta-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 16px 18px;
-        }
-
-        /* BAR CHART */
-        .bar-chart {
-            display: flex;
-            align-items: flex-end;
-            gap: 6px;
-            height: 120px;
-            padding-top: 8px;
-        }
-        .bar-group {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-        }
-        .bar-pair {
-            display: flex;
-            gap: 2px;
-            align-items: flex-end;
-            width: 100%;
-        }
-        .bar {
-            flex: 1;
-            border-radius: 3px 3px 0 0;
-            min-height: 2px;
-            transition: height 0.5s ease;
-        }
-        .bar-label {
-            font-size: 9px;
-            color: var(--text-muted);
-            text-align: center;
-        }
-
-        /* ALERTS */
         .alert {
             border-radius: var(--radius-sm);
             padding: 12px 14px;
@@ -674,99 +359,13 @@
             border: 1px solid var(--warning);
             color: var(--warning);
         }
-        .alert-danger {
-            background: var(--danger-dim);
-            border: 1px solid var(--danger);
-            color: var(--danger);
-        }
         .alert-success {
             background: var(--accent-dim);
             border: 1px solid var(--accent);
             color: var(--accent);
         }
 
-        /* SEARCH */
-        .search-bar {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            padding: 10px 14px;
-            color: var(--text);
-            font-size: 14px;
-            font-family: 'DM Sans', sans-serif;
-            outline: none;
-            width: 100%;
-        }
-        .search-bar:focus {
-            border-color: var(--accent);
-        }
-
-        /* CHIPS */
-        .chips {
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            padding-bottom: 4px;
-            scrollbar-width: none;
-        }
-        .chips::-webkit-scrollbar {
-            display: none;
-        }
-        .chip {
-            padding: 8px 14px;
-            border-radius: 10px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            color: var(--text-muted);
-            font-size: 12px;
-            font-weight: 600;
-            white-space: nowrap;
-            cursor: pointer;
-        }
-        .chip.active {
-            background: var(--accent-dim);
-            border-color: var(--accent);
-            color: var(--accent);
-        }
-
-        /* CALENDAR */
-        .cal-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 10px 0;
-            border-bottom: 1px solid var(--border);
-        }
-        .cal-day {
-            width: 32px;
-            height: 32px;
-            background: var(--surface2);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--accent);
-        }
-
-        /* EMPTY STATE */
-        .empty {
-            padding: 40px 20px;
-            text-align: center;
-        }
-        .empty-icon {
-            font-size: 32px;
-            margin-bottom: 12px;
-            opacity: 0.5;
-        }
-        .empty-text {
-            font-size: 13px;
-            color: var(--text-muted);
-        }
-
-        /* IMPORT TX */
-        .import-tx {
+        .import-item {
             display: flex;
             align-items: center;
             gap: 10px;
@@ -775,26 +374,18 @@
             border-radius: 10px;
             margin-bottom: 6px;
             border: 1px solid var(--border);
+            font-size: 12px;
         }
 
-        /* RULE ROW */
-        .rule-row {
-            margin-bottom: 16px;
+        .empty {
+            padding: 40px 20px;
+            text-align: center;
         }
-        .rule-header {
-            display: flex;
-            justify-content: space-between;
+        .empty-text {
             font-size: 13px;
-            font-weight: 600;
-            margin-bottom: 6px;
-        }
-        .rule-sub {
-            font-size: 10px;
             color: var(--text-muted);
-            margin-top: 4px;
         }
 
-        /* TOAST */
         #toast {
             transition: opacity 0.3s;
             opacity: 0;
@@ -805,7 +396,6 @@
 <body>
 
 <div id="app">
-    <!-- HEADER -->
     <header class="header">
         <div>
             <div class="header-logo">FinançaFamiliar</div>
@@ -817,190 +407,74 @@
         </div>
     </header>
 
-    <!-- CONTENT -->
     <main class="content">
-        <!-- DASHBOARD -->
         <div class="page active" id="page-dashboard">
             <div class="grid2">
                 <div class="stat-card">
-                    <div class="stat-label">Receitas <span style="color:var(--accent)">↗</span></div>
+                    <div class="stat-label">Receitas ↗</div>
                     <div class="stat-value" id="dash-receitas">R$ 0,00</div>
                     <div class="stat-sub" id="dash-receitas-sub">0 entradas</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Despesas <span style="color:var(--danger)">↘</span></div>
+                    <div class="stat-label">Despesas ↘</div>
                     <div class="stat-value" id="dash-despesas">R$ 0,00</div>
                     <div class="stat-sub" id="dash-despesas-sub">0 saídas</div>
                 </div>
             </div>
 
             <div class="card">
-                <div class="section-title">Saúde Financeira</div>
-                <div class="score-wrap">
-                    <div class="score-ring-container">
-                        <svg width="100" height="100">
-                            <circle cx="50" cy="50" r="42" fill="none" stroke="var(--border)" stroke-width="8"/>
-                            <circle id="scoreArc" cx="50" cy="50" r="42" fill="none" stroke="var(--accent)" stroke-width="8" stroke-dasharray="264" stroke-dashoffset="264" stroke-linecap="round" style="transition: stroke-dashoffset 1s ease;"/>
-                        </svg>
-                        <div class="score-center">
-                            <div class="score-num" id="scoreNum">0</div>
-                            <div class="score-label">Score</div>
-                        </div>
-                    </div>
-                    <div style="flex:1">
-                        <div id="scoreDesc" style="font-size:14px;font-weight:700;margin-bottom:4px">Calculando...</div>
-                        <div id="scoreDetail" style="font-size:11px;color:var(--text-muted);line-height:1.4"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="section-title">Gastos por Categoria</div>
-                <div class="donut-wrap">
-                    <svg id="donutSvg" width="120" height="120" viewBox="0 0 120 120"></svg>
-                    <div class="donut-legend" id="donutLegend"></div>
-                </div>
-            </div>
-
-            <div id="dashTip"></div>
-
-            <div class="card">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-                    <div class="section-title" style="margin-bottom:0">Últimas Transações</div>
-                    <button style="background:none;border:none;color:var(--accent);font-size:12px;font-weight:600" onclick="showPage('transacoes', document.getElementById('nav-tx'))">Ver todas</button>
-                </div>
+                <div class="section-title">Últimas Transações</div>
                 <div id="topGastos"></div>
             </div>
         </div>
 
-        <!-- TRANSAÇÕES -->
         <div class="page" id="page-transacoes">
-            <input type="text" class="search-bar" id="txSearch" placeholder="Procurar transação..." oninput="renderTransactions()"/>
-            <div class="chips" id="txFilterChips"></div>
+            <input type="text" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;width:100%" id="txSearch" placeholder="Procurar transação..." oninput="renderTransactions()"/>
             <div id="txSummary" style="font-size:11px;color:var(--text-muted);margin:4px 0"></div>
             <div id="txList"></div>
         </div>
 
-        <!-- ORÇAMENTO -->
-        <div class="page" id="page-orcamento">
-            <div class="card">
-                <div class="section-title">Regra 50-30-20</div>
-                <div id="rule502030"></div>
-            </div>
-            <div class="card">
-                <div class="section-title">Limites por Categoria</div>
-                <div id="catLimits"></div>
-            </div>
-            <div class="card">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-                    <div class="section-title" style="margin-bottom:0">Metas de Economia</div>
-                    <button style="background:var(--accent-dim);border:none;border-radius:8px;padding:6px 12px;color:var(--accent);font-size:12px;font-weight:700" onclick="openModal('modalMeta')">+ Nova Meta</button>
-                </div>
-                <div id="metasList" style="display:flex;flex-direction:column;gap:12px"></div>
-            </div>
-        </div>
-
-        <!-- FAMÍLIA -->
-        <div class="page" id="page-familia">
-            <div class="card">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-                    <div class="section-title" style="margin-bottom:0">Membros da Família</div>
-                    <button style="background:var(--accent-dim);border:none;border-radius:8px;padding:6px 12px;color:var(--accent);font-size:12px;font-weight:700" onclick="openModal('modalMembro')">+ Adicionar</button>
-                </div>
-                <div id="familyList" style="display:flex;flex-direction:column;gap:12px"></div>
-            </div>
-            <div class="card">
-                <div class="section-title">Gastos da Casa</div>
-                <div id="casaGastos"></div>
-            </div>
-        </div>
-
-        <!-- DICAS -->
-        <div class="page" id="page-dicas">
-            <div class="card">
-                <div class="section-title">Análise de Inteligência</div>
-                <div id="analiseDetalhada"></div>
-            </div>
-            <div class="section-title">Dicas Personalizadas</div>
-            <div id="tipsList" style="display:flex;flex-direction:column;gap:12px"></div>
-            <div class="card">
-                <div class="section-title">Calendário de Contas</div>
-                <div id="calendarList"></div>
-            </div>
-        </div>
-
-        <!-- RELATÓRIOS -->
-        <div class="page" id="page-relatorios">
-            <div class="chips" id="periodoChips"></div>
-            <div class="card">
-                <div class="section-title">Fluxo de Caixa</div>
-                <div class="bar-chart" id="barChart"></div>
-                <div style="display:flex;justify-content:center;gap:16px;margin-top:12px">
-                    <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-muted)"><div style="width:8px;height:8px;border-radius:2px;background:var(--accent)"></div> Receitas</div>
-                    <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-muted)"><div style="width:8px;height:8px;border-radius:2px;background:var(--danger)"></div> Despesas</div>
-                </div>
-            </div>
-            <div class="card">
-                <div class="section-title">Detalhamento por Categoria</div>
-                <div id="relCats"></div>
-            </div>
-            <button class="btn btn-ghost" onclick="exportCSV()">📊 Exportar Relatório (CSV)</button>
-        </div>
-
-        <!-- IMPORTAR -->
         <div class="page" id="page-importar">
             <div class="card">
                 <div class="section-title">Lançamento Manual</div>
-                <div class="toggle-row" style="margin-bottom:16px">
-                    <button class="toggle-btn active-red" id="manTypeDeb" onclick="setManType('debit')">Despesa</button>
-                    <button class="toggle-btn" id="manTypeCre" onclick="setManType('credit')">Receita</button>
-                </div>
                 <div class="field"><label>Descrição</label><input id="manDesc" placeholder="Ex: Aluguel, Mercado..."/></div>
                 <div class="field"><label>Valor (R$)</label><input id="manVal" type="number" step="0.01" placeholder="0,00"/></div>
                 <div class="field"><label>Data</label><input id="manDate" type="date"/></div>
-                <div class="field"><label>Membro</label><select id="manMember"></select></div>
-                <div class="field"><label>Categoria</label><div class="cat-grid" id="manCatGrid"></div></div>
+                <div class="field"><label>Tipo</label><select id="manType"><option value="debit">Despesa</option><option value="credit">Receita</option></select></div>
                 <button class="btn btn-accent" onclick="addManual()">Salvar Transação</button>
             </div>
+
             <div class="card">
                 <div class="section-title">Importar Extrato PDF</div>
                 <div class="upload-area" onclick="document.getElementById('pdfInput').click()">
                     <div style="font-size:24px;margin-bottom:8px">📄</div>
                     <div style="font-size:13px;font-weight:700">Selecionar PDF</div>
-                    <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Nubank, Inter, Bradesco...</div>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Nubank, Inter, Bradesco, Itaú...</div>
                     <input type="file" id="pdfInput" hidden accept="application/pdf" onchange="handlePDF(this)"/>
                 </div>
                 <div id="importResult" style="margin-top:12px"></div>
             </div>
         </div>
 
-        <!-- CONFIG -->
         <div class="page" id="page-config">
             <div class="card">
-                <div class="section-title">Perfil da Família</div>
+                <div class="section-title">Perfil</div>
                 <div class="field"><label>Nome da Família</label><input id="cfgNome" onchange="saveConfig()"/></div>
-                <div class="field"><label>Renda Mensal Total (R<LaTex>$)</label><input id="cfgRenda" type="number" onchange="saveConfig()"/></div>
-                <div class="field"><label>Reserva de Emergência Atual (R$</LaTex>)</label><input id="cfgReserva" type="number" onchange="saveConfig()"/></div>
-                <div id="reservaInfo" style="font-size:11px;color:var(--text-muted);line-height:1.4"></div>
+                <div class="field"><label>Renda Mensal (R$)</label><input id="cfgRenda" type="number" onchange="saveConfig()"/></div>
             </div>
             <div class="card">
-                <div class="section-title">Ajustar Limites Mensais</div>
-                <div id="cfgLimits"></div>
-            </div>
-            <div class="card">
-                <div class="section-title">Dados e Backup</div>
+                <div class="section-title">Dados</div>
                 <div style="display:flex;flex-direction:column;gap:10px">
-                    <button class="btn btn-ghost" onclick="exportJSON()">📥 Exportar Backup (JSON)</button>
-                    <button class="btn btn-ghost" onclick="document.getElementById('importJsonInput').click()">📤 Importar Backup (JSON)</button>
+                    <button class="btn btn-ghost" onclick="exportJSON()">📥 Exportar Backup</button>
+                    <button class="btn btn-ghost" onclick="document.getElementById('importJsonInput').click()">📤 Importar Backup</button>
                     <input type="file" id="importJsonInput" hidden accept="application/json" onchange="importJSON(this)"/>
-                    <button class="btn btn-danger" onclick="clearData()">🗑️ Apagar Todos os Dados</button>
+                    <button class="btn btn-danger" onclick="clearData()">🗑️ Apagar Dados</button>
                 </div>
             </div>
-            <div style="text-align:center;padding:20px;font-size:11px;color:var(--text-muted)">FinançaFamiliar v2.0 · Web App</div>
+            <div style="text-align:center;padding:20px;font-size:11px;color:var(--text-muted)">FinançaFamiliar v3.0 · Web App</div>
         </div>
     </main>
 
-    <!-- NAV -->
     <nav class="nav">
         <button class="nav-btn active" onclick="showPage('dashboard', this)">
             <span class="nav-icon">🏠</span><span>Início</span>
@@ -1008,132 +482,37 @@
         <button class="nav-btn" id="nav-tx" onclick="showPage('transacoes', this)">
             <span class="nav-icon">📑</span><span>Extrato</span>
         </button>
-        <button class="nav-btn nav-add" onclick="openModal('modalQuick')">
-            <span class="nav-icon">➕</span><span>Novo</span>
-        </button>
-        <button class="nav-btn" onclick="showPage('orcamento', this)">
-            <span class="nav-icon">🎯</span><span>Metas</span>
+        <button class="nav-btn" onclick="showPage('importar', this)">
+            <span class="nav-icon">📥</span><span>Importar</span>
         </button>
         <button class="nav-btn" onclick="showPage('config', this)">
-            <span class="nav-icon">⚙️</span><span>Ajustes</span>
+            <span class="nav-icon">⚙️</span><span>Config</span>
         </button>
     </nav>
 </div>
 
-<!-- MODALS -->
-<div class="modal-bg" id="modalQuick" onclick="closeModalBg(event,'modalQuick')">
-    <div class="modal">
-        <div class="modal-title">Lançamento Rápido <button class="modal-close" onclick="closeModal('modalQuick')">✕</button></div>
-        <div class="toggle-row" style="margin-bottom:16px">
-            <button class="toggle-btn active-red" id="qTypeDeb" onclick="setQType('debit')">Despesa</button>
-            <button class="toggle-btn" id="qTypeCre" onclick="setQType('credit')">Receita</button>
-        </div>
-        <div class="field"><label>O que foi?</label><input id="qDesc" placeholder="Ex: Almoço, Uber..."/></div>
-        <div class="field"><label>Quanto? (R$)</label><input id="qVal" type="number" step="0.01" placeholder="0,00"/></div>
-        <div class="field"><label>Categoria</label><div class="cat-grid" id="qCatGrid"></div></div>
-        <button class="btn btn-accent" onclick="addQuick()">Adicionar Agora</button>
-        <button class="btn btn-ghost" style="margin-top:10px" onclick="closeModal('modalQuick'); showPage('importar', null)">Mais detalhes...</button>
-    </div>
-</div>
-
-<div class="modal-bg" id="modalMeta" onclick="closeModalBg(event,'modalMeta')">
-    <div class="modal">
-        <div class="modal-title">Nova Meta <button class="modal-close" onclick="closeModal('modalMeta')">✕</button></div>
-        <div class="field"><label>Nome da Meta</label><input id="metaNome" placeholder="Ex: Viagem, Carro Novo..."/></div>
-        <div class="field"><label>Valor Alvo (R$)</label><input id="metaAlvo" type="number" placeholder="0,00"/></div>
-        <div class="field"><label>Valor Já Guardado (R$)</label><input id="metaAtual" type="number" placeholder="0,00"/></div>
-        <div class="field"><label>Prazo (Opcional)</label><input id="metaPrazo" type="date"/></div>
-        <button class="btn btn-accent" onclick="addMeta()">Criar Meta</button>
-    </div>
-</div>
-
-<div class="modal-bg" id="modalMembro" onclick="closeModalBg(event,'modalMembro')">
-    <div class="modal">
-        <div class="modal-title">Adicionar Membro <button class="modal-close" onclick="closeModal('modalMembro')">✕</button></div>
-        <div class="field"><label>Nome</label><input id="memNome" placeholder="Ex: Maria, João..."/></div>
-        <div class="field"><label>Limite Mensal (R$)</label><input id="memLimite" type="number" placeholder="0,00"/></div>
-        <button class="btn btn-accent" onclick="addMembro()">Adicionar Membro</button>
-    </div>
-</div>
-
-<div class="modal-bg" id="modalAporte" onclick="closeModalBg(event,'modalAporte')">
-    <div class="modal">
-        <div class="modal-title">Registrar Aporte <button class="modal-close" onclick="closeModal('modalAporte')">✕</button></div>
-        <div style="font-size:14px;color:var(--text-muted);margin-bottom:16px;" id="aporteMetaNome"></div>
-        <div class="field"><label>Valor do Aporte (R$)</label><input id="aporteVal" type="number" step="0.01" placeholder="0,00"/></div>
-        <input type="hidden" id="aporteMetaId"/>
-        <button class="btn btn-accent" onclick="registrarAporte()">Confirmar Aporte</button>
-    </div>
-</div>
-
-<div class="modal-bg" id="modalClearConfirm" onclick="closeModalBg(event,'modalClearConfirm')">
-    <div class="modal">
-        <div class="modal-title">⚠️ Apagar Dados <button class="modal-close" onclick="closeModal('modalClearConfirm')">✕</button></div>
-        <div style="font-size:14px;color:var(--text-muted);margin-bottom:20px;line-height:1.6;">Todos os dados serão apagados permanentemente. Esta ação não pode ser desfeita.</div>
-        <div style="display:flex;flex-direction:column;gap:10px;">
-            <button class="btn btn-danger" onclick="clearDataConfirmed()">🗑️ Sim, apagar tudo</button>
-            <button class="btn btn-ghost" onclick="closeModal('modalClearConfirm')">Cancelar</button>
-        </div>
-    </div>
-</div>
-
-<div class="modal-bg" id="modalDeleteTx" onclick="closeModalBg(event,'modalDeleteTx')">
-    <div class="modal">
-        <div class="modal-title">🗑️ Excluir Transação <button class="modal-close" onclick="closeModal('modalDeleteTx')">✕</button></div>
-        <div style="font-size:14px;color:var(--text-muted);margin-bottom:20px;" id="deleteTxDesc">Deseja excluir esta transação?</div>
-        <div style="display:flex;flex-direction:column;gap:10px;">
-            <button class="btn btn-danger" onclick="deleteTxConfirmed()">Excluir</button>
-            <button class="btn btn-ghost" onclick="closeModal('modalDeleteTx')">Cancelar</button>
-        </div>
-    </div>
-</div>
-
-<div class="modal-bg" id="modalDeleteMeta" onclick="closeModalBg(event,'modalDeleteMeta')">
-    <div class="modal">
-        <div class="modal-title">🗑️ Excluir Meta <button class="modal-close" onclick="closeModal('modalDeleteMeta')">✕</button></div>
-        <div style="font-size:14px;color:var(--text-muted);margin-bottom:20px;">Deseja excluir esta meta?</div>
-        <input type="hidden" id="deleteMetaId"/>
-        <div style="display:flex;flex-direction:column;gap:10px;">
-            <button class="btn btn-danger" onclick="deleteMetaConfirmed()">Excluir</button>
-            <button class="btn btn-ghost" onclick="closeModal('modalDeleteMeta')">Cancelar</button>
-        </div>
-    </div>
-</div>
-
-<div class="modal-bg" id="modalDeleteMembro" onclick="closeModalBg(event,'modalDeleteMembro')">
-    <div class="modal">
-        <div class="modal-title">🗑️ Remover Membro <button class="modal-close" onclick="closeModal('modalDeleteMembro')">✕</button></div>
-        <div style="font-size:14px;color:var(--text-muted);margin-bottom:20px;">Deseja remover este membro da família?</div>
-        <input type="hidden" id="deleteMembroId"/>
-        <div style="display:flex;flex-direction:column;gap:10px;">
-            <button class="btn btn-danger" onclick="deleteMembroConfirmed()">Remover</button>
-            <button class="btn btn-ghost" onclick="closeModal('modalDeleteMembro')">Cancelar</button>
-        </div>
-    </div>
-</div>
-
 <script>
 const CATS = [
-    {id:'alimentacao', label:'Alimentação', icon:'🍽️', color:'#fb923c', limit:1500},
-    {id:'transporte',  label:'Transporte',  icon:'🚗', color:'#38bdf8', limit:600},
-    {id:'moradia',     label:'Moradia',     icon:'🏠', color:'#a78bfa', limit:2000},
-    {id:'saude',       label:'Saúde',       icon:'💊', color:'#f472b6', limit:400},
-    {id:'educacao',    label:'Educação',    icon:'📚', color:'#34d399', limit:800},
-    {id:'lazer',       label:'Lazer',       icon:'🎬', color:'#fbbf24', limit:500},
-    {id:'assinaturas', label:'Assinaturas', icon:'📱', color:'#60a5fa', limit:300},
-    {id:'renda',       label:'Renda',       icon:'💼', color:'#00e5a0', limit:0},
-    {id:'outros',      label:'Outros',      icon:'📦', color:'#9ca3af', limit:400},
+    {id:'alimentacao', label:'Alimentação', icon:'🍽️', color:'#fb923c'},
+    {id:'transporte',  label:'Transporte',  icon:'🚗', color:'#38bdf8'},
+    {id:'moradia',     label:'Moradia',     icon:'🏠', color:'#a78bfa'},
+    {id:'saude',       label:'Saúde',       icon:'💊', color:'#f472b6'},
+    {id:'educacao',    label:'Educação',    icon:'📚', color:'#34d399'},
+    {id:'lazer',       label:'Lazer',       icon:'🎬', color:'#fbbf24'},
+    {id:'assinaturas', label:'Assinaturas', icon:'📱', color:'#60a5fa'},
+    {id:'renda',       label:'Renda',       icon:'💼', color:'#00e5a0'},
+    {id:'outros',      label:'Outros',      icon:'📦', color:'#9ca3af'},
 ];
 
 const KEYWORDS = {
-    alimentacao:['ifood','rappi','mcdonalds','burger','pizza','restaurante','padaria','supermercado','mercado','carrefour','extra','pao de acucar','atacadao','lanchonete','sushi','delivery','uber eats','hortifrutti'],
-    transporte:['uber','99taxi','cabify','combustivel','gasolina','etanol','shell','posto','estacionamento','pedagio','onibus','metro','passagem','taxi'],
-    moradia:['aluguel','condominio','iptu','energia','eletricidade','agua','saneamento','gas','internet','vivo','claro','tim','oi','net'],
-    saude:['farmacia','drogasil','drogaraia','ultrafarma','medico','consulta','clinica','hospital','laboratorio','exame','plano de saude','unimed','bradesco saude'],
-    educacao:['escola','faculdade','cursinho','idioma','curso','livro','material','alura','udemy','coursera','descomplica'],
-    lazer:['cinema','netflix','spotify','amazon prime','disney','hbo','deezer','youtube','steam','playstation','xbox','teatro','show','ingresso','parque','viagem','hotel','airbnb','booking'],
-    assinaturas:['netflix','spotify','amazon','disney','hbo','apple','google one','icloud','dropbox','adobe','canva','chatgpt','claude'],
-    renda:['salario','salário','pagamento','deposito','depósito','pix rec','ted rec','transferencia recebida'],
+    alimentacao:['ifood','rappi','mcdonalds','burger','pizza','restaurante','padaria','supermercado','mercado','carrefour','extra','pao de acucar','atacadao','lanchonete','sushi','delivery','uber eats','hortifrutti','açougue','hortifruti','refeição','almoço','café','pão','bolo','doce','bala','refrigerante','suco','bebida'],
+    transporte:['uber','99taxi','cabify','combustivel','gasolina','etanol','shell','posto','estacionamento','pedagio','onibus','metro','passagem','taxi','trem','viajem','viagem','aeroporto','aéreo','combustível','combustivel','valet'],
+    moradia:['aluguel','condominio','iptu','energia','eletricidade','agua','saneamento','gas','internet','vivo','claro','tim','oi','net','telecom','telefone','wifi','adsl','fibra','banda larga'],
+    saude:['farmacia','drogasil','drogaraia','ultrafarma','medico','consulta','clinica','hospital','laboratorio','exame','plano de saude','unimed','bradesco saude','amil','sulamerica','dental','dentista','oftalmologista','psicólogo','psicólogo','vacina','medicamento','remédio','droga','farmácia'],
+    educacao:['escola','faculdade','cursinho','idioma','curso','livro','material','alura','udemy','coursera','descomplica','professora','professor','aula','educação','treinamento','workshop','seminário','palestra'],
+    lazer:['cinema','netflix','spotify','amazon prime','disney','hbo','deezer','youtube','steam','playstation','xbox','teatro','show','ingresso','parque','viagem','hotel','airbnb','booking','bar','restaurante','pub','discoteca','boate','jogo','game','filme','série','música','livro','revista','jornal'],
+    assinaturas:['netflix','spotify','amazon','disney','hbo','apple','google one','icloud','dropbox','adobe','canva','chatgpt','claude','subscription','assinatura','premium','plus','pro'],
+    renda:['salario','salário','pagamento','deposito','depósito','pix rec','ted rec','transferencia recebida','bônus','bonus','décimo','décimo terceiro','décimo 13','gratificação','comissão','freelance','venda','receita'],
 };
 
 function autoCat(desc) {
@@ -1144,27 +523,9 @@ function autoCat(desc) {
     return 'outros';
 }
 
-const DEMO_TXS = [
-    {id:'d1',date:'2025-04-03',description:'iFood - Jantar família',amount:87.50,type:'debit',category:'alimentacao',member:''},
-    {id:'d2',date:'2025-04-02',description:'Uber - Trabalho',amount:32.90,type:'debit',category:'transporte',member:''},
-    {id:'d3',date:'2025-04-01',description:'Netflix',amount:55.90,type:'debit',category:'assinaturas',member:''},
-    {id:'d4',date:'2025-04-01',description:'Supermercado Extra',amount:423.60,type:'debit',category:'alimentacao',member:''},
-    {id:'d5',date:'2025-04-01',description:'Condomínio Abril',amount:850.00,type:'debit',category:'moradia',member:''},
-    {id:'d11',date:'2025-03-27',description:'Salário Março',amount:8500.00,type:'credit',category:'renda',member:''},
-];
-
 let state = {
     transactions: [],
-    members: [],
-    metas: [],
-    config: {nome:'Minha Família', renda:8500, reserva:0},
-    catLimits: Object.fromEntries(CATS.map(c=>[c.id,c.limit])),
-    txFilter: 'todos',
-    periodoFilter: 'mes',
-    qType: 'debit',
-    qCat: 'outros',
-    manType: 'debit',
-    manCat: 'outros',
+    config: {nome:'Minha Família', renda:8500},
 };
 
 function save() {
@@ -1175,27 +536,19 @@ function load() {
         const s = localStorage.getItem('ff_state');
         if (s) { state = {...state, ...JSON.parse(s)}; return; }
     } catch(e){}
-    state.transactions = DEMO_TXS.map(t=>({...t}));
 }
 
 function fmt(v) {
     return 'R$ ' + Math.abs(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
-function fmtShort(v) {
-    if (v >= 1000) return 'R$ ' + (v/1000).toFixed(1).replace('.',',') + 'k';
-    return fmt(v);
-}
 function getCat(id) { return CATS.find(c=>c.id===id) || CATS[CATS.length-1]; }
 function uid() { return 'tx-'+Date.now()+'-'+Math.random().toString(36).slice(2,7); }
-function pct(a,b) { return b>0 ? Math.min(100,Math.round(a/b*100)) : 0; }
-function barColor(p) { return p>=100?'var(--danger)':p>=75?'var(--warning)':'var(--accent)'; }
 
 function debits() { return state.transactions.filter(t=>t.type==='debit'); }
 function credits() { return state.transactions.filter(t=>t.type==='credit'); }
 function totalDebit() { return debits().reduce((s,t)=>s+t.amount,0); }
 function totalCredit() { return credits().reduce((s,t)=>s+t.amount,0); }
 function balance() { return totalCredit()-totalDebit(); }
-function catTotal(id) { return debits().filter(t=>t.category===id).reduce((s,t)=>s+t.amount,0); }
 
 function showPage(id, btn) {
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -1205,97 +558,173 @@ function showPage(id, btn) {
     renderPage(id);
 }
 
-function openModal(id) {
-    document.getElementById(id).classList.add('open');
-    document.getElementById(id).style.display='flex';
-}
-function closeModal(id) {
-    const el = document.getElementById(id);
-    el.classList.remove('open');
-    el.style.display='none';
-}
-function closeModalBg(e, id) {
-    if(e.target===document.getElementById(id)) closeModal(id);
-}
-
-function renderCatGrid(containerId, stateKey, onSelect) {
-    const el = document.getElementById(containerId);
-    if(!el) return;
-    el.innerHTML = CATS.filter(c=>c.id!=='renda').map(c=>`
-        <button class="cat-btn${state[stateKey]===c.id?' selected':''}" 
-            style="color:<LaTex>${c.color};" onclick="$</LaTex>{onSelect}('<LaTex>${c.id}')">
-            <span class="ci">$</LaTex>{c.icon}</span>
-            <span class="cl">${c.label}</span>
-        </button>`).join('');
-}
-function setQCat(id) { state.qCat=id; renderCatGrid('qCatGrid','qCat','setQCat'); }
-function setManCat(id) { state.manCat=id; renderCatGrid('manCatGrid','manCat','setManCat'); }
-function setQType(t) {
-    state.qType=t;
-    document.getElementById('qTypeDeb').classList.toggle('active',t==='debit');
-    document.getElementById('qTypeDeb').classList.toggle('active-red',t==='debit');
-    document.getElementById('qTypeCre').classList.toggle('active',t==='credit');
-}
-function setManType(t) {
-    state.manType=t;
-    document.getElementById('manTypeDeb').classList.toggle('active',t==='debit');
-    document.getElementById('manTypeDeb').classList.toggle('active-red',t==='debit');
-    document.getElementById('manTypeCre').classList.toggle('active',t==='credit');
+function parseNubank(text) {
+    const txs = [];
+    const lines = text.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const dateMatch = line.match(/(\d{2}\/\d{2})/);
+        const valueMatch = line.match(/R\$\s*([\d.]+,\d{2})/);
+        if (dateMatch && valueMatch) {
+            const dateStr = dateMatch[1];
+            const valueStr = valueMatch[1];
+            const value = parseFloat(valueStr.replace(/\./g, '').replace(',', '.'));
+            if (value > 0 && value < 100000) {
+                const desc = line.replace(dateMatch[0], '').replace(valueMatch[0], '').trim().slice(0, 60) || 'Transação Nubank';
+                const isCredit = /crédito|credito|pagamento|pix rec|ted rec|depósito|salário/i.test(line);
+                txs.push({
+                    id: uid(),
+                    date: `2025-${dateStr.split('/').reverse().join('-')}`,
+                    description: desc,
+                    amount: value,
+                    type: isCredit ? 'credit' : 'debit',
+                    category: isCredit ? 'renda' : autoCat(desc),
+                });
+            }
+        }
+    }
+    return txs;
 }
 
-function addQuick() {
-    const desc = document.getElementById('qDesc').value.trim();
-    const val = parseFloat(document.getElementById('qVal').value);
-    if(!desc||!val||val<=0) return showToast('⚠️ Preencha descrição e valor.');
-    const today = new Date().toISOString().split('T')[0];
-    state.transactions.unshift({id:uid(),date:today,description:desc,amount:val,type:state.qType,category:state.qType==='credit'?'renda':state.qCat,member:''});
-    save(); closeModal('modalQuick');
-    document.getElementById('qDesc').value=''; document.getElementById('qVal').value='';
-    renderAll(); showToast('✅ Transação adicionada!');
+function parseInter(text) {
+    const txs = [];
+    const lines = text.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const dateMatch = line.match(/(\d{2}\/\d{2})/);
+        const valueMatch = line.match(/R\<LaTex>$\s*([\d.]+,\d{2})|(\d+,\d{2})/);
+        if (dateMatch && valueMatch) {
+            const dateStr = dateMatch[1];
+            const valueStr = valueMatch[0].replace('R$</LaTex>', '').trim();
+            const value = parseFloat(valueStr.replace(/\./g, '').replace(',', '.'));
+            if (value > 0 && value < 100000) {
+                const desc = line.replace(dateMatch[0], '').replace(valueMatch[0], '').trim().slice(0, 60) || 'Transação Inter';
+                const isCredit = /crédito|credito|pagamento|pix rec|ted rec|depósito|salário/i.test(line);
+                txs.push({
+                    id: uid(),
+                    date: `2025-${dateStr.split('/').reverse().join('-')}`,
+                    description: desc,
+                    amount: value,
+                    type: isCredit ? 'credit' : 'debit',
+                    category: isCredit ? 'renda' : autoCat(desc),
+                });
+            }
+        }
+    }
+    return txs;
 }
+
+function parseGenericBankStatement(text) {
+    const txs = [];
+    const lines = text.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        const dateMatch = line.match(/(\d{2}[\/\-]\d{2}(?:[\/\-]\d{2,4})?)/);
+        const valueMatch = line.match(/R?\$?\s*([\d]{1,3}(?:\.[\d]{3})*,\d{2})/);
+        if (dateMatch && valueMatch) {
+            const dateStr = dateMatch[1];
+            const valueStr = valueMatch[1];
+            const value = parseFloat(valueStr.replace(/\./g, '').replace(',', '.'));
+            if (value > 0 && value < 100000) {
+                const desc = line.replace(dateMatch[0], '').replace(valueMatch[0], '').replace(/[*\-|]/g, ' ').trim().slice(0, 60) || 'Transação importada';
+                const isCredit = /crédito|credito|pagamento|pix rec|ted rec|depósito|salário|entrada|receita|depósito/i.test(line);
+                const parts = dateStr.split(/[\/\-]/);
+                const year = parts[2] ? (parts[2].length === 2 ? '20' + parts[2] : parts[2]) : new Date().getFullYear();
+                const dateISO = `<LaTex>${year}-$</LaTex>{parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                txs.push({
+                    id: uid(),
+                    date: dateISO,
+                    description: desc,
+                    amount: value,
+                    type: isCredit ? 'credit' : 'debit',
+                    category: isCredit ? 'renda' : autoCat(desc),
+                });
+            }
+        }
+    }
+    return txs.sort((a, b) => new Date(b.date) - new Date(a.date));
+}
+
+async function extractPDFText(file) {
+    try {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+        let fullText = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items.map(item => item.str).join(' ');
+            fullText += pageText + '\n';
+        }
+        return fullText;
+    } catch (error) {
+        console.error('Erro ao extrair PDF:', error);
+        throw new Error('Não foi possível ler o PDF. Verifique se é um arquivo válido.');
+    }
+}
+
+async function handlePDF(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const el = document.getElementById('importResult');
+    el.innerHTML = '<div class="alert alert-warning">⏳ Lendo PDF...</div>';
+    try {
+        const text = await extractPDFText(file);
+        let parsed = [];
+        if (text.toLowerCase().includes('nubank')) { parsed = parseNubank(text); }
+        else if (text.toLowerCase().includes('inter')) { parsed = parseInter(text); }
+        else { parsed = parseGenericBankStatement(text); }
+        if (parsed.length > 0) {
+            el.innerHTML = `<div class="alert alert-success">✅ ${parsed.length} transações encontradas!</div>
+            <LaTex>${parsed.slice(0, 10).map(t => `
+                <div class="import-item">
+                    <span>$</LaTex>{getCat(t.category).icon}</span>
+                    <div style="flex:1">
+                        <div><LaTex>${t.description}</div>
+                        <div style="font-size:10px;color:var(--text-muted)">$</LaTex>{t.date} · <LaTex>${getCat(t.category).label}</div>
+                    </div>
+                    <span style="font-weight:700;color:$</LaTex>{t.type==='credit'?'var(--accent)':'var(--text)'}"><LaTex>${t.type==='credit'?'+':'-'}$</LaTex>{fmt(t.amount)}</span>
+                </div>
+            `).join('')}
+            <button class="btn btn-accent" style="margin-top:12px" onclick="confirmImport(<LaTex>${JSON.stringify(parsed).replace(/"/g, '&quot;')})">✅ Importar $</LaTex>{parsed.length} transações</button>`;
+        } else {
+            el.innerHTML = `<div class="alert alert-warning">⚠️ Nenhuma transação encontrada no PDF.</div>`;
+        }
+        input.value = '';
+    } catch (error) {
+        el.innerHTML = `<div class="alert alert-danger">❌ Erro: ${error.message}</div>`;
+        input.value = '';
+    }
+}
+
+function confirmImport(parsed) {
+    const arr = typeof parsed === 'string' ? JSON.parse(parsed) : parsed;
+    state.transactions = [...arr, ...state.transactions];
+    save(); renderAll();
+    document.getElementById('importResult').innerHTML = `<div class="alert alert-success">✅ ${arr.length} transações importadas!</div>`;
+    setTimeout(() => { document.getElementById('importResult').innerHTML = ''; }, 4000);
+}
+
 function addManual() {
     const desc = document.getElementById('manDesc').value.trim();
     const val = parseFloat(document.getElementById('manVal').value);
-    if(!desc||!val||val<=0) return showToast('⚠️ Preencha descrição e valor.');
-    const dateVal = document.getElementById('manDate').value || new Date().toISOString().split('T')[0];
-    const member = document.getElementById('manMember').value;
-    state.transactions.unshift({id:uid(),date:dateVal,description:desc,amount:val,type:state.manType,category:state.manType==='credit'?'renda':state.manCat,member});
+    const date = document.getElementById('manDate').value || new Date().toISOString().split('T')[0];
+    const type = document.getElementById('manType').value;
+    if (!desc || !val || val <= 0) return showToast('⚠️ Preencha descrição e valor.');
+    state.transactions.unshift({ id: uid(), date: date, description: desc, amount: val, type: type, category: type === 'credit' ? 'renda' : autoCat(desc) });
     save(); renderAll();
-    document.getElementById('manDesc').value=''; document.getElementById('manVal').value='';
+    document.getElementById('manDesc').value = ''; document.getElementById('manVal').value = '';
     showToast('✅ Transação adicionada!');
-}
-
-function calcScore() {
-    let score = 0, details = [];
-    const renda = state.config.renda || totalCredit() || 1;
-    const bal = balance();
-    const desp = totalDebit();
-    const reserva = state.config.reserva || 0;
-    if(bal>=0){score+=30;details.push('✅ Saldo positivo (+30)');}
-    if(bal>renda*0.1){score+=20;details.push('✅ Poupança ≥ 10% (+20)');}
-    const over = CATS.filter(c=>c.id!=='renda'&&catTotal(c.id)>(state.catLimits[c.id]||c.limit));
-    if(over.length===0){score+=20;details.push('✅ Nenhuma categoria estourada (+20)');}
-    if(reserva>=desp*3){score+=30;details.push('✅ Reserva de emergência (+30)');}
-    return {score, details};
-}
-
-function generateTips() {
-    const tips = [];
-    const bal = balance();
-    if(bal<0) tips.push({icon:'🚨',color:'var(--danger)',title:'Atenção: Saldo Negativo',text:'Seus gastos superaram sua renda. Revise despesas supérfluas.'});
-    const ali = catTotal('alimentacao');
-    if(ali>1500) tips.push({icon:'🍽️',color:'var(--orange)',title:'Alimentação Elevada',text:'Considere cozinhar mais em casa para reduzir gastos com delivery.'});
-    tips.push({icon:'📐',color:'var(--accent)',title:'Regra 50-30-20',text:'Tente manter 50% para necessidades, 30% desejos e 20% poupança.'});
-    return tips;
 }
 
 function renderHeader() {
     const bal = balance();
     const el = document.getElementById('headerBalance');
     el.textContent = fmt(bal);
-    el.style.color = bal>=0 ? 'var(--accent)' : 'var(--danger)';
+    el.style.color = bal >= 0 ? 'var(--accent)' : 'var(--danger)';
     const cfg = state.config.nome || 'Minha Família';
-    const month = new Date().toLocaleString('pt-BR', {month: 'long'});
+    const month = new Date().toLocaleString('pt-BR', { month: 'long' });
     document.getElementById('headerSub').textContent = cfg + ' · ' + month.charAt(0).toUpperCase() + month.slice(1);
 }
 
@@ -1305,178 +734,88 @@ function renderDashboard() {
     document.getElementById('dash-receitas-sub').textContent = credits().length + ' entradas';
     document.getElementById('dash-despesas').textContent = fmt(td);
     document.getElementById('dash-despesas-sub').textContent = debits().length + ' saídas';
-
-    const {score, details} = calcScore();
-    const arc = document.getElementById('scoreArc');
-    arc.style.strokeDashoffset = 264 - (264 * score/100);
-    document.getElementById('scoreNum').textContent = score;
-    document.getElementById('scoreDetail').innerHTML = details.slice(0,3).join('<br>');
-
-    const svg = document.getElementById('donutSvg');
-    const legend = document.getElementById('donutLegend');
-    const data = CATS.filter(c=>c.id!=='renda'&&catTotal(c.id)>0).map(c=>({...c,val:catTotal(c.id)})).sort((a,b)=>b.val-a.val);
-    if(td===0){svg.innerHTML='<circle cx="60" cy="60" r="46" fill="none" stroke="var(--border)" stroke-width="18"/>';legend.innerHTML='';}
-    else {
-        let startAngle=-Math.PI/2, paths='';
-        data.forEach(d=>{
-            const sweep=2*Math.PI*(d.val/td);
-            const x1=60+46*Math.cos(startAngle),y1=60+46*Math.sin(startAngle);
-            const x2=60+46*Math.cos(startAngle+sweep),y2=60+46*Math.sin(startAngle+sweep);
-            paths+=`<path d="M60,60 L${x1},<LaTex>${y1} A46,46,0,$</LaTex>{sweep>Math.PI?1:0},1,<LaTex>${x2},$</LaTex>{y2}Z" fill="<LaTex>${d.color}"/>`;
-            startAngle+=sweep;
-        });
-        svg.innerHTML=paths+'<circle cx="60" cy="60" r="28" fill="var(--surface)"/>';
-        legend.innerHTML = data.slice(0,5).map(d=>`<div class="legend-item"><div class="legend-dot" style="background:$</LaTex>{d.color}"></div><span style="color:var(--text-muted)"><LaTex>${d.icon} $</LaTex>{d.label}</span><span class="legend-val">${fmtShort(d.val)}</span></div>`).join('');
-    }
-
-    const sorted = [...debits()].sort((a,b)=>b.amount-a.amount).slice(0,3);
-    document.getElementById('topGastos').innerHTML = sorted.map(t=>{
-        const cat=getCat(t.category);
-        return `<div class="tx-item"><div class="tx-icon" style="background:${cat.color}22;"><LaTex>${cat.icon}</div><div class="tx-info"><div class="tx-desc">$</LaTex>{t.description}</div><div class="tx-meta"><LaTex>${cat.label}</div></div><div class="tx-amount" style="color:var(--danger)">$</LaTex>{fmt(t.amount)}</div></div>`;
-    }).join('') || '<div class="empty"><div class="empty-text">Sem despesas</div></div>';
-
-    const tips = generateTips();
-    if(tips.length>0){
-        const t=tips[0];
-        document.getElementById('dashTip').innerHTML=`<div class="tip-card" style="border-left-color:<LaTex>${t.color}"><span class="tip-icon">$</LaTex>{t.icon}</span><div><div class="tip-title" style="color:<LaTex>${t.color}">$</LaTex>{t.title}</div><div class="tip-text">${t.text}</div></div></div>`;
-    }
+    const sorted = [...debits()].sort((a, b) => b.amount - a.amount).slice(0, 5);
+    document.getElementById('topGastos').innerHTML = sorted.length === 0 ? '<div class="empty"><div class="empty-text">Nenhuma transação</div></div>' :
+        sorted.map(t => {
+            const cat = getCat(t.category);
+            return `<div class="tx-item"><div class="tx-icon" style="background:<LaTex>${cat.color}22;">$</LaTex>{cat.icon}</div><div class="tx-info"><div class="tx-desc"><LaTex>${t.description}</div><div class="tx-meta">$</LaTex>{cat.label} · <LaTex>${t.date.slice(8, 10)}/$</LaTex>{t.date.slice(5, 7)}</div></div><div class="tx-amount" style="color:var(--danger)">${fmt(t.amount)}</div></div>`;
+        }).join('');
 }
 
 function renderTransactions() {
-    const search = (document.getElementById('txSearch')||{value:''}).value.toLowerCase();
-    let txs = [...state.transactions].sort((a,b)=>new Date(b.date)-new Date(a.date));
-    if(state.txFilter!=='todos') txs=txs.filter(t=>t.category===state.txFilter||(state.txFilter==='receitas'&&t.type==='credit')||(state.txFilter==='despesas'&&t.type==='debit'));
-    if(search) txs=txs.filter(t=>t.description.toLowerCase().includes(search));
-
-    document.getElementById('txFilterChips').innerHTML=['todos','despesas','receitas',...CATS.filter(c=>c.id!=='renda').map(c=>c.id)].map(f=>{
-        const label = f==='todos'?'Todos':f==='despesas'?'💸 Despesas':f==='receitas'?'💰 Receitas':getCat(f).icon+' '+getCat(f).label;
-        return `<button class="chip${state.txFilter===f?' active':''}" onclick="setTxFilter('<LaTex>${f}')">$</LaTex>{label}</button>`;
-    }).join('');
-
-    document.getElementById('txList').innerHTML = txs.map(t=>{
-        const cat=getCat(t.category);
-        return `<div class="tx-item" onclick="toggleTxDetail('<LaTex>${t.id}')">
-            <div class="tx-icon" style="background:$</LaTex>{cat.color}22;"><LaTex>${cat.icon}</div>
-            <div class="tx-info"><div class="tx-desc">$</LaTex>{t.description}</div><div class="tx-meta"><LaTex>${t.date.split('-').reverse().slice(0,2).join('/')} · $</LaTex>{cat.label}</div></div>
-            <div class="tx-amount" style="color:<LaTex>${t.type==='credit'?'var(--accent)':'var(--text)'}">$</LaTex>{t.type==='credit'?'+':'-'}<LaTex>${fmt(t.amount)}</div>
-        </div>
-        <div class="tx-detail" id="detail-$</LaTex>{t.id}">
-            <button class="cat-chip" style="background:var(--danger-dim);color:var(--danger)" onclick="deleteTx('${t.id}')">🗑️ Excluir</button>
-        </div>`;
-    }).join('');
-}
-
-function setTxFilter(f) { state.txFilter=f; renderTransactions(); }
-function toggleTxDetail(id) { document.getElementById('detail-'+id).classList.toggle('open'); }
-let _pendingDeleteTxId = null;
-function deleteTx(id) { _pendingDeleteTxId = id; openModal('modalDeleteTx'); }
-function deleteTxConfirmed() {
-    state.transactions=state.transactions.filter(t=>t.id!==_pendingDeleteTxId);
-    closeModal('modalDeleteTx'); save(); renderAll();
-}
-
-function renderOrcamento() {
-    const renda = state.config.renda || 1;
-    const nec = (catTotal('moradia')+catTotal('alimentacao')+catTotal('saude')+catTotal('transporte'));
-    const des = (catTotal('lazer')+catTotal('assinaturas')+catTotal('educacao'));
-    const rules=[{label:'Necessidades (50%)',val:nec,target:renda*0.5,color:'var(--accent)'},{label:'Desejos (30%)',val:des,target:renda*0.3,color:'var(--purple)'}];
-    document.getElementById('rule502030').innerHTML=rules.map(r=>{
-        const p=pct(r.val,r.target);
-        return `<div class="rule-row"><div class="rule-header"><span>${r.label}</span><span><LaTex>${fmt(r.val)}</span></div><div class="progress-wrap"><div class="progress-bar" style="width:$</LaTex>{p}%;background:${r.val>r.target?'var(--danger)':r.color}"></div></div></div>`;
-    }).join('');
-    renderMetas();
-}
-
-function renderMetas() {
-    document.getElementById('metasList').innerHTML = state.metas.map(m=>{
-        const p=pct(m.atual,m.alvo);
-        return `<div class="meta-card"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><strong>🎯 ${m.nome}</strong><button onclick="deleteMeta('<LaTex>${m.id}')" style="background:none;border:none;color:var(--danger)">🗑️</button></div><div class="progress-wrap"><div class="progress-bar" style="width:$</LaTex>{p}%;background:var(--accent)"></div></div><div style="font-size:11px;margin-top:4px"><LaTex>${fmt(m.atual)} / $</LaTex>{fmt(m.alvo)}</div></div>`;
-    }).join('');
-}
-
-function addMeta() {
-    const nome=document.getElementById('metaNome').value;
-    const alvo=parseFloat(document.getElementById('metaAlvo').value);
-    if(nome&&alvo){ state.metas.push({id:uid(),nome,alvo,atual:0}); save(); closeModal('modalMeta'); renderMetas(); }
-}
-function deleteMeta(id) { state.metas=state.metas.filter(m=>m.id!==id); save(); renderMetas(); }
-
-function renderFamilia() {
-    document.getElementById('familyList').innerHTML = state.members.map(m=>{
-        const spent=debits().filter(t=>t.member===m.id).reduce((s,t)=>s+t.amount,0);
-        return `<div class="member-card"><div class="member-avatar" style="background:var(--accent-dim);color:var(--accent)"><LaTex>${m.nome[0]}</div><div style="flex:1"><strong>$</LaTex>{m.nome}</strong><div style="font-size:12px;color:var(--text-muted)">Gasto: <LaTex>${fmt(spent)}</div></div><button onclick="deleteMembro('$</LaTex>{m.id}')" style="background:none;border:none;color:var(--danger)">🗑️</button></div>`;
-    }).join('');
-    const sel=document.getElementById('manMember');
-    if(sel) sel.innerHTML='<option value="">Compartilhado</option>'+state.members.map(m=>`<option value="<LaTex>${m.id}">$</LaTex>{m.nome}</option>`).join('');
-}
-
-function addMembro() {
-    const nome=document.getElementById('memNome').value;
-    if(nome){ state.members.push({id:uid(),nome}); save(); closeModal('modalMembro'); renderFamilia(); }
-}
-function deleteMembro(id) { state.members=state.members.filter(m=>m.id!==id); save(); renderFamilia(); }
-
-function renderDicas() {
-    const tips=generateTips();
-    document.getElementById('tipsList').innerHTML=tips.map(t=>`<div class="tip-card" style="border-left-color:<LaTex>${t.color}"><span class="tip-icon">$</LaTex>{t.icon}</span><div><div class="tip-title"><LaTex>${t.title}</div><div class="tip-text">$</LaTex>{t.text}</div></div></div>`).join('');
-}
-
-function renderRelatorios() {
-    const cats=CATS.filter(c=>c.id!=='renda'&&catTotal(c.id)>0).sort((a,b)=>catTotal(b.id)-catTotal(a.id));
-    document.getElementById('relCats').innerHTML=cats.map(c=>`<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)"><span><LaTex>${c.icon} $</LaTex>{c.label}</span><strong>${fmt(catTotal(c.id))}</strong></div>`).join('');
+    const search = (document.getElementById('txSearch') || { value: '' }).value.toLowerCase();
+    let txs = [...state.transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
+    if (search) txs = txs.filter(t => t.description.toLowerCase().includes(search));
+    const td = txs.filter(t => t.type === 'debit').reduce((s, t) => s + t.amount, 0);
+    const tc = txs.filter(t => t.type === 'credit').reduce((s, t) => s + t.amount, 0);
+    document.getElementById('txSummary').innerHTML = `${txs.length} transações · <span style="color:var(--danger)">-<LaTex>${fmt(td)}</span> · <span style="color:var(--accent)">+$</LaTex>{fmt(tc)}</span>`;
+    document.getElementById('txList').innerHTML = txs.length === 0 ? '<div class="empty"><div class="empty-text">Nenhuma transação</div></div>' :
+        txs.map(t => {
+            const cat = getCat(t.category);
+            return `<div class="tx-item"><div class="tx-icon" style="background:<LaTex>${cat.color}22;">$</LaTex>{cat.icon}</div><div class="tx-info"><div class="tx-desc"><LaTex>${t.description}</div><div class="tx-meta">$</LaTex>{t.date.split('-').reverse().slice(0, 2).join('/')} · <LaTex>${cat.label}</div></div><div class="tx-amount" style="color:$</LaTex>{t.type === 'credit' ? 'var(--accent)' : 'var(--text)'}"><LaTex>${t.type === 'credit' ? '+' : '-'}$</LaTex>{fmt(t.amount)}</div></div>`;
+        }).join('');
 }
 
 function renderConfig() {
-    document.getElementById('cfgNome').value=state.config.nome;
-    document.getElementById('cfgRenda').value=state.config.renda;
-    document.getElementById('cfgReserva').value=state.config.reserva;
+    document.getElementById('cfgNome').value = state.config.nome;
+    document.getElementById('cfgRenda').value = state.config.renda;
 }
+
 function saveConfig() {
-    state.config.nome=document.getElementById('cfgNome').value;
-    state.config.renda=parseFloat(document.getElementById('cfgRenda').value)||0;
-    state.config.reserva=parseFloat(document.getElementById('cfgReserva').value)||0;
+    state.config.nome = document.getElementById('cfgNome').value;
+    state.config.renda = parseFloat(document.getElementById('cfgRenda').value) || 0;
     save(); renderHeader();
 }
 
-function handlePDF(input) {
-    showToast('Simulando leitura de PDF...');
-    setTimeout(()=>{
-        const t={id:uid(),date:new Date().toISOString().split('T')[0],description:'Compra PDF Exemplo',amount:150,type:'debit',category:'outros',member:''};
-        state.transactions.unshift(t); save(); renderAll(); showToast('Importado com sucesso!');
-    },1500);
+function exportJSON() {
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'financafamiliar-backup.json'; a.click();
 }
 
-function exportCSV() { showToast('Exportando CSV...'); }
-function exportJSON() {
-    const blob=new Blob([JSON.stringify(state)],{type:'application/json'});
-    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='backup.json'; a.click();
+function importJSON(input) {
+    const file = input.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+        try {
+            const data = JSON.parse(reader.result);
+            if (data.transactions) { state = { ...state, ...data }; save(); renderAll(); showToast('✅ Backup importado!'); }
+        } catch { showToast('⚠️ Erro ao ler o backup.'); }
+        input.value = '';
+    };
+    reader.readAsText(file);
 }
-function clearData() { openModal('modalClearConfirm'); }
-function clearDataConfirmed() { localStorage.removeItem('ff_state'); location.reload(); }
+
+function clearData() {
+    if (confirm('Apagar todos os dados?')) { localStorage.removeItem('ff_state'); state.transactions = []; save(); renderAll(); showToast('✅ Dados apagados.'); }
+}
 
 function showToast(msg) {
-    let t=document.getElementById('toast');
-    if(!t){ t=document.createElement('div'); t.id='toast'; t.style.cssText='position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#1e2130;color:#fff;padding:10px 20px;border-radius:10px;z-index:9999;'; document.body.appendChild(t); }
-    t.textContent=msg; t.style.opacity='1'; setTimeout(()=>t.style.opacity='0',3000);
+    let t = document.getElementById('toast');
+    if (!t) {
+        t = document.createElement('div'); t.id = 'toast';
+        t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#1e2130;color:#fff;padding:10px 20px;border-radius:10px;z-index:9999;border:1px solid #00e5a044;';
+        document.body.appendChild(t);
+    }
+    t.textContent = msg; t.style.opacity = '1';
+    clearTimeout(t._timer); t._timer = setTimeout(() => { t.style.opacity = '0'; }, 3000);
 }
 
 function renderPage(id) {
     renderHeader();
-    if(id==='dashboard') renderDashboard();
-    else if(id==='transacoes') renderTransactions();
-    else if(id==='orcamento') renderOrcamento();
-    else if(id==='familia') renderFamilia();
-    else if(id==='dicas') renderDicas();
-    else if(id==='relatorios') renderRelatorios();
-    else if(id==='importar'){ renderCatGrid('manCatGrid','manCat','setManCat'); renderFamilia(); }
-    else if(id==='config') renderConfig();
+    if (id === 'dashboard') renderDashboard();
+    else if (id === 'transacoes') renderTransactions();
+    else if (id === 'config') renderConfig();
 }
-function renderAll() { renderHeader(); const active=document.querySelector('.page.active'); if(active) renderPage(active.id.replace('page-','')); }
 
-window.addEventListener('DOMContentLoaded',()=>{
+function renderAll() {
+    renderHeader();
+    const active = document.querySelector('.page.active');
+    if (active) renderPage(active.id.replace('page-', ''));
+}
+
+window.addEventListener('DOMContentLoaded', () => {
     load();
-    renderCatGrid('qCatGrid','qCat','setQCat');
-    renderCatGrid('manCatGrid','manCat','setManCat');
+    document.getElementById('manDate').value = new Date().toISOString().split('T')[0];
     renderAll();
 });
 </script>
