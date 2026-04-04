@@ -59,6 +59,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .nav-btn .nav-icon{font-size:18px;line-height:1;}
 .nav-btn::after{content:’’;position:absolute;top:0;left:50%;transform:translateX(-50%);width:0;height:2px;background:var(–accent);border-radius:0 0 2px 2px;transition:width 0.2s;}
 .nav-btn.active::after{width:28px;}
+.nav-btn.nav-add{color:var(–accent);font-weight:700;}
+.nav-btn.nav-add .nav-icon{font-size:22px;}
 
 /* CARDS */
 .card{background:var(–surface);border:1px solid var(–border);border-radius:var(–radius);padding:18px 20px;}
@@ -515,6 +517,60 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
   </div>
 </div>
 
+<!-- Confirmar Apagar Dados -->
+
+<div class="modal-bg" id="modalClearConfirm" onclick="closeModalBg(event,'modalClearConfirm')">
+  <div class="modal">
+    <div class="modal-title">⚠️ Apagar Dados <button class="modal-close" onclick="closeModal('modalClearConfirm')">✕</button></div>
+    <div style="font-size:14px;color:var(--text-muted);margin-bottom:20px;line-height:1.6;">Todos os dados serão apagados permanentemente e substituídos pelos dados de demonstração. Esta ação não pode ser desfeita.</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button class="btn btn-danger" onclick="clearDataConfirmed()">🗑️ Sim, apagar tudo</button>
+      <button class="btn btn-ghost" onclick="closeModal('modalClearConfirm')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirmar Excluir Transação -->
+
+<div class="modal-bg" id="modalDeleteTx" onclick="closeModalBg(event,'modalDeleteTx')">
+  <div class="modal">
+    <div class="modal-title">🗑️ Excluir Transação <button class="modal-close" onclick="closeModal('modalDeleteTx')">✕</button></div>
+    <div style="font-size:14px;color:var(--text-muted);margin-bottom:20px;" id="deleteTxDesc">Deseja excluir esta transação?</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button class="btn btn-danger" onclick="deleteTxConfirmed()">Excluir</button>
+      <button class="btn btn-ghost" onclick="closeModal('modalDeleteTx')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirmar Excluir Meta -->
+
+<div class="modal-bg" id="modalDeleteMeta" onclick="closeModalBg(event,'modalDeleteMeta')">
+  <div class="modal">
+    <div class="modal-title">🗑️ Excluir Meta <button class="modal-close" onclick="closeModal('modalDeleteMeta')">✕</button></div>
+    <div style="font-size:14px;color:var(--text-muted);margin-bottom:20px;">Deseja excluir esta meta?</div>
+    <input type="hidden" id="deleteMetaId"/>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button class="btn btn-danger" onclick="deleteMetaConfirmed()">Excluir</button>
+      <button class="btn btn-ghost" onclick="closeModal('modalDeleteMeta')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirmar Excluir Membro -->
+
+<div class="modal-bg" id="modalDeleteMembro" onclick="closeModalBg(event,'modalDeleteMembro')">
+  <div class="modal">
+    <div class="modal-title">🗑️ Remover Membro <button class="modal-close" onclick="closeModal('modalDeleteMembro')">✕</button></div>
+    <div style="font-size:14px;color:var(--text-muted);margin-bottom:20px;">Deseja remover este membro da família?</div>
+    <input type="hidden" id="deleteMembroId"/>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button class="btn btn-danger" onclick="deleteMembroConfirmed()">Remover</button>
+      <button class="btn btn-ghost" onclick="closeModal('modalDeleteMembro')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ═══════════════════════════════════════════════════════════
 // DATA
@@ -682,23 +738,23 @@ function setManType(t) {
 function addQuick() {
   const desc = document.getElementById('qDesc').value.trim();
   const val = parseFloat(document.getElementById('qVal').value);
-  if(!desc||!val||val<=0) return alert('Preencha descrição e valor.');
+  if(!desc||!val||val<=0) return showToast('⚠️ Preencha descrição e valor.');
   const today = new Date().toISOString().split('T')[0];
   state.transactions.unshift({id:uid(),date:today,description:desc,amount:val,type:state.qType,category:state.qType==='credit'?'renda':state.qCat,member:''});
   save(); closeModal('modalQuick');
   document.getElementById('qDesc').value=''; document.getElementById('qVal').value='';
-  renderAll();
+  renderAll(); showToast('✅ Transação adicionada!');
 }
 function addManual() {
   const desc = document.getElementById('manDesc').value.trim();
   const val = parseFloat(document.getElementById('manVal').value);
-  if(!desc||!val||val<=0) return alert('Preencha descrição e valor.');
+  if(!desc||!val||val<=0) return showToast('⚠️ Preencha descrição e valor.');
   const dateVal = document.getElementById('manDate').value || new Date().toISOString().split('T')[0];
   const member = document.getElementById('manMember').value;
   state.transactions.unshift({id:uid(),date:dateVal,description:desc,amount:val,type:state.manType,category:state.manType==='credit'?'renda':state.manCat,member});
   save(); renderAll();
   document.getElementById('manDesc').value=''; document.getElementById('manVal').value='';
-  alert('✅ Transação adicionada!');
+  showToast('✅ Transação adicionada!');
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -869,10 +925,19 @@ function changeCat(txId, catId) {
   state.transactions=state.transactions.map(t=>t.id===txId?{...t,category:catId}:t);
   save(); renderTransactions(); renderDashboard();
 }
+let _pendingDeleteTxId = null;
 function deleteTx(id) {
-  if(!confirm('Excluir esta transação?')) return;
-  state.transactions=state.transactions.filter(t=>t.id!==id);
-  save(); renderAll();
+  _pendingDeleteTxId = id;
+  const tx = state.transactions.find(t=>t.id===id);
+  document.getElementById('deleteTxDesc').textContent = tx ? `"${tx.description}" — ${fmt(tx.amount)}` : 'Deseja excluir esta transação?';
+  openModal('modalDeleteTx');
+}
+function deleteTxConfirmed() {
+  if(!_pendingDeleteTxId) return;
+  state.transactions=state.transactions.filter(t=>t.id!==_pendingDeleteTxId);
+  _pendingDeleteTxId=null;
+  closeModal('modalDeleteTx');
+  save(); renderAll(); showToast('🗑️ Transação excluída.');
 }
 
 function renderOrcamento() {
@@ -945,14 +1010,21 @@ function addMeta() {
   const alvo=parseFloat(document.getElementById('metaAlvo').value)||0;
   const atual=parseFloat(document.getElementById('metaAtual').value)||0;
   const prazo=document.getElementById('metaPrazo').value;
-  if(!nome||!alvo) return alert('Preencha nome e valor alvo.');
+  if(!nome||!alvo) return showToast('⚠️ Preencha nome e valor alvo.');
   state.metas.push({id:'meta-'+Date.now(),nome,alvo,atual,prazo});
   save(); closeModal('modalMeta'); renderMetas();
   document.getElementById('metaNome').value=''; document.getElementById('metaAlvo').value=''; document.getElementById('metaAtual').value=''; document.getElementById('metaPrazo').value='';
+  showToast('✅ Meta criada!');
 }
 function deleteMeta(id) {
-  if(!confirm('Excluir esta meta?')) return;
-  state.metas=state.metas.filter(m=>m.id!==id); save(); renderMetas();
+  document.getElementById('deleteMetaId').value=id;
+  openModal('modalDeleteMeta');
+}
+function deleteMetaConfirmed() {
+  const id=document.getElementById('deleteMetaId').value;
+  state.metas=state.metas.filter(m=>m.id!==id);
+  closeModal('modalDeleteMeta');
+  save(); renderMetas(); showToast('🗑️ Meta excluída.');
 }
 function openAporte(id, nome) {
   document.getElementById('aporteMetaId').value=id;
@@ -963,9 +1035,9 @@ function openAporte(id, nome) {
 function registrarAporte() {
   const id=document.getElementById('aporteMetaId').value;
   const val=parseFloat(document.getElementById('aporteVal').value)||0;
-  if(!val) return alert('Digite um valor.');
+  if(!val) return showToast('⚠️ Digite um valor.');
   state.metas=state.metas.map(m=>m.id===id?{...m,atual:Math.min(m.alvo,m.atual+val)}:m);
-  save(); closeModal('modalAporte'); renderMetas();
+  save(); closeModal('modalAporte'); renderMetas(); showToast('✅ Aporte registrado!');
 }
 
 function renderFamilia() {
@@ -1005,14 +1077,21 @@ function renderFamilia() {
 function addMembro() {
   const nome=document.getElementById('memNome').value.trim();
   const limite=parseFloat(document.getElementById('memLimite').value)||0;
-  if(!nome) return alert('Digite o nome do membro.');
+  if(!nome) return showToast('⚠️ Digite o nome do membro.');
   state.members.push({id:'mem-'+Date.now(),nome,limite});
   save(); closeModal('modalMembro'); renderFamilia();
   document.getElementById('memNome').value=''; document.getElementById('memLimite').value='';
+  showToast('✅ Membro adicionado!');
 }
 function deleteMembro(id) {
-  if(!confirm('Remover este membro?')) return;
-  state.members=state.members.filter(m=>m.id!==id); save(); renderFamilia();
+  document.getElementById('deleteMembroId').value=id;
+  openModal('modalDeleteMembro');
+}
+function deleteMembroConfirmed() {
+  const id=document.getElementById('deleteMembroId').value;
+  state.members=state.members.filter(m=>m.id!==id);
+  closeModal('modalDeleteMembro');
+  save(); renderFamilia(); showToast('🗑️ Membro removido.');
 }
 
 function renderDicas() {
@@ -1191,20 +1270,32 @@ function importJSON(input) {
   reader.onload=()=>{
     try{
       const data=JSON.parse(reader.result);
-      if(data.transactions){state={...state,...data};save();renderAll();alert('✅ Backup importado!');}
-      else alert('Arquivo inválido.');
-    }catch{alert('Erro ao ler o backup.');}
+      if(data.transactions){state={...state,...data};save();renderAll();showToast('✅ Backup importado!');}
+      else showToast('⚠️ Arquivo inválido.');
+    }catch{showToast('⚠️ Erro ao ler o backup.');}
     input.value='';
   };
   reader.readAsText(file);
 }
 function clearData() {
-  if(!confirm('Tem certeza? Todos os dados serão apagados!')) return;
-  if(!confirm('Esta ação não pode ser desfeita. Confirma?')) return;
+  openModal('modalClearConfirm');
+}
+function clearDataConfirmed() {
+  closeModal('modalClearConfirm');
   localStorage.removeItem('ff_state');
   state.transactions=[...DEMO_TXS.map(t=>({...t}))];
   state.members=[]; state.metas=[];
-  save(); renderAll(); alert('✅ Dados limpos. Dados de demo restaurados.');
+  state.catLimits=Object.fromEntries(CATS.map(c=>[c.id,c.limit]));
+  state.config={nome:'Minha Família',renda:8500,reserva:0};
+  save(); renderAll();
+  showToast('✅ Dados apagados. Dados de demonstração restaurados.');
+}
+function showToast(msg) {
+  let t=document.getElementById('toast');
+  if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;bottom:calc(80px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:#1e2130;color:#eef0f6;padding:12px 20px;border-radius:12px;font-size:13px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.5);white-space:nowrap;border:1px solid #00e5a044;';document.body.appendChild(t);}
+  t.textContent=msg; t.style.opacity='1';
+  clearTimeout(t._timer);
+  t._timer=setTimeout(()=>{t.style.opacity='0';},3000);
 }
 
 // ═══════════════════════════════════════════════════════════
