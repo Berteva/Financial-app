@@ -3,81 +3,182 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no"/>
+<!--
+  FIX 7 + 15: viewport sem maximum-scale para não bloquear acessibilidade,
+  mas font-size:16px nos inputs previne o zoom automático do iOS Safari.
+  viewport-fit=cover necessário para safe-area-inset funcionar.
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
 <meta name="theme-color" content="#0a0c10"/>
 <title>FinançaFamiliar</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
 <style>
-:root {
-  --bg:#0a0c10; --surface:#111318; --surface2:#181b22; --border:#1e2130;
-  --accent:#00e5a0; --accent-dim:rgba(0,229,160,0.12);
-  --danger:#ff4d6d; --danger-dim:rgba(255,77,109,0.12);
-  --warning:#f5a623; --warning-dim:rgba(245,166,35,0.12);
-  --purple:#a78bfa; --blue:#38bdf8; --orange:#fb923c; --green:#34d399; --yellow:#fbbf24;
-  --text:#eef0f6; --text-muted:#6b7280;
-  --radius:16px; --radius-sm:10px; --nav-h:68px;
+:root{
+  --bg:#0a0c10;--surface:#111318;--surface2:#181b22;--border:#1e2130;
+  --accent:#00e5a0;--accent-dim:rgba(0,229,160,0.12);--accent-soft:rgba(0,229,160,0.25);
+  --danger:#ff4d6d;--danger-dim:rgba(255,77,109,0.12);
+  --warning:#f5a623;--warning-dim:rgba(245,166,35,0.12);
+  --purple:#a78bfa;--blue:#38bdf8;--orange:#fb923c;--green:#34d399;--yellow:#fbbf24;
+  --text:#eef0f6;--text-muted:#6b7280;
+  --radius:16px;--radius-sm:10px;--nav-h:68px;
 }
+
+/* ── RESET ── */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-html{height:100%;height:-webkit-fill-available;}
-body{height:100%;height:-webkit-fill-available;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;overflow:hidden;position:fixed;width:100%;overscroll-behavior:none;}
-/* FIX 7: três camadas de fallback para altura total no iOS
-   1. -webkit-fill-available  → iOS 12–15 (exclui barra Safari)
-   2. 100vh                   → fallback universal
-   3. 100dvh                  → iOS 16+ (dynamic viewport, inclui exclusão correta) */
-#app{
+
+/*
+FIX 7: Cascata de altura para cobrir todos os iOS:
+
+- 100vh           → baseline universal (inclui barra Safari no iOS antigo)
+- -webkit-fill-available → iOS 12-15: exclui barra do Safari corretamente
+- 100dvh          → iOS 16+: dynamic viewport height (a solução definitiva)
+  NÃO usar position:fixed no body — quebra scroll dentro de containers filhos.
+  */
+  html{
+  height:100%;
+  height:-webkit-fill-available;
+  }
+  body{
+  min-height:100vh;
+  min-height:-webkit-fill-available;
+  min-height:100dvh;
+  background:var(–bg);
+  color:var(–text);
+  font-family:‘DM Sans’,sans-serif;
+  /* overscroll-behavior evita “rubber band” indesejado no iOS */
+  overscroll-behavior:none;
+  /* NÃO usar overflow:hidden aqui — quebra scroll em iOS */
+  }
+  #app{
   height:100vh;
   height:-webkit-fill-available;
   height:100dvh;
-  display:flex;flex-direction:column;max-width:480px;margin:0 auto;background:var(--bg);
+  display:flex;
+  flex-direction:column;
+  max-width:480px;
+  margin:0 auto;
+  background:var(–bg);
+  /* overflow no container, não no body */
   overflow:hidden;
-  position:relative;
-}
-::-webkit-scrollbar{width:3px;}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+  }
 
-/* HEADER */
-.header{background:var(–surface);border-bottom:1px solid var(–border);padding:14px 20px;padding-top:calc(14px + env(safe-area-inset-top));display:flex;justify-content:space-between;align-items:center;flex-shrink:0;z-index:50;}
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-thumb{background:var(–border);border-radius:4px;}
+
+/* ── HEADER ── */
+.header{
+background:var(–surface);
+border-bottom:1px solid var(–border);
+padding:14px 20px;
+/* FIX: safe-area para notch/Dynamic Island */
+padding-top:calc(14px + env(safe-area-inset-top));
+display:flex;justify-content:space-between;align-items:center;
+flex-shrink:0;z-index:50;
+}
 .header-left{display:flex;align-items:center;gap:12px;}
-.menu-btn{background:none;border:none;color:var(–text);font-size:22px;cursor:pointer;padding:6px 8px;border-radius:8px;line-height:1;}
+.menu-btn{background:none;border:none;color:var(–text);font-size:22px;cursor:pointer;padding:6px 8px;border-radius:8px;line-height:1;
+/* FIX 12: área de toque mínima 44pt Apple HIG */
+min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;
+}
 .header-logo{font-family:‘Syne’,sans-serif;font-size:18px;font-weight:800;color:var(–accent);}
 .header-sub{font-size:10px;color:var(–text-muted);margin-top:2px;}
 .header-balance{text-align:right;}
 .header-balance-label{font-size:10px;color:var(–text-muted);text-transform:uppercase;letter-spacing:.05em;}
 .header-balance-value{font-size:18px;font-weight:700;}
 
-/* SIDEBAR */
-.sidebar{position:fixed;top:0;left:0;width:280px;height:100%;background:var(–surface);border-right:1px solid var(–border);z-index:1000;transform:translateX(-100%);transition:transform .3s ease;display:flex;flex-direction:column;overflow-y:auto;}
+/* ── STORAGE WARNING BANNER (FIX 6) ── */
+#storageWarning{
+display:none;background:var(–warning-dim);
+border-bottom:1px solid var(–warning);
+padding:10px 16px;gap:10px;align-items:center;flex-shrink:0;z-index:49;
+}
+#storageWarning.show{display:flex;}
+
+/* ── SIDEBAR ── */
+.sidebar{
+position:fixed;top:0;left:0;width:280px;height:100%;
+background:var(–surface);border-right:1px solid var(–border);
+z-index:1000;transform:translateX(-100%);
+transition:transform .3s cubic-bezier(.4,0,.2,1);
+display:flex;flex-direction:column;overflow-y:auto;
+/* FIX 10: scroll bounce contido no sidebar */
+overscroll-behavior:contain;
+-webkit-overflow-scrolling:touch;
+}
 .sidebar.open{transform:translateX(0);}
-.sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:999;display:none;}
+/* FIX 5: sem backdrop-filter no overlay — causa lag grave em iPhones mais antigos */
+.sidebar-overlay{
+position:fixed;inset:0;
+background:rgba(0,0,0,.6);
+z-index:999;display:none;
+}
 .sidebar-overlay.open{display:block;}
 .sidebar-header{padding:24px 20px;border-bottom:1px solid var(–border);background:var(–surface2);}
 .sidebar-header h2{font-size:17px;color:var(–accent);font-family:‘Syne’,sans-serif;}
 .sidebar-header p{font-size:11px;color:var(–text-muted);margin-top:4px;}
 .sidebar-nav{flex:1;padding:12px 0;}
-.sidebar-item{display:flex;align-items:center;gap:14px;padding:14px 20px;background:none;border:none;width:100%;text-align:left;color:var(–text-muted);font-size:14px;font-family:‘DM Sans’,sans-serif;cursor:pointer;}
+.sidebar-item{
+display:flex;align-items:center;gap:14px;
+padding:14px 20px;background:none;border:none;width:100%;
+text-align:left;color:var(–text-muted);font-size:14px;
+font-family:‘DM Sans’,sans-serif;cursor:pointer;
+/* FIX 12: área de toque adequada */
+min-height:48px;
+}
 .sidebar-item.active{color:var(–accent);background:var(–accent-dim);border-left:3px solid var(–accent);}
 .sidebar-icon{font-size:20px;}
 .sidebar-footer{padding:16px 20px;border-top:1px solid var(–border);font-size:11px;color:var(–text-muted);text-align:center;}
 
-/* CONTENT */
-.content{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(–nav-h) + 16px + env(safe-area-inset-bottom));}
+/* ── CONTENT ── */
+.content{
+flex:1;overflow-y:auto;overflow-x:hidden;
+-webkit-overflow-scrolling:touch;
+/* FIX 10: scroll bounce contido na área de conteúdo */
+overscroll-behavior-y:contain;
+padding-bottom:calc(var(–nav-h) + env(safe-area-inset-bottom));
+}
 .page{display:none;padding:16px;flex-direction:column;gap:14px;}
-.page.active{display:flex;animation:fadeIn .25s ease;}
-@keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.page.active{display:flex;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.page.active{animation:fadeIn .22s ease;}
 
-/* BOTTOM NAV */
-.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(17,19,24,.97);backdrop-filter:blur(20px);border-top:1px solid var(–border);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:100;height:var(–nav-h);box-shadow:0 -4px 24px rgba(0,0,0,.6);}
-.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:var(–text-muted);font-size:10px;font-family:‘DM Sans’,sans-serif;cursor:pointer;padding:6px 2px;position:relative;}
+/* ── BOTTOM NAV ──
+FIX 5: backdrop-filter removido da nav — substituído por fundo opaco sólido.
+Em iPhones antigos blur causa drop de frames durante scroll.
+*/
+.bottom-nav{
+position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+width:100%;max-width:480px;
+background:#111318;  /* sólido — sem backdrop-filter */
+border-top:1px solid var(–border);
+display:flex;
+padding-bottom:env(safe-area-inset-bottom);
+z-index:100;height:var(–nav-h);
+box-shadow:0 -2px 16px rgba(0,0,0,.7);
+}
+.nav-btn{
+flex:1;display:flex;flex-direction:column;align-items:center;
+justify-content:center;gap:3px;background:none;border:none;
+color:var(–text-muted);font-size:10px;font-family:‘DM Sans’,sans-serif;
+cursor:pointer;padding:6px 2px;position:relative;
+/* FIX 12: área de toque mínima */
+min-height:44px;
+}
 .nav-btn.active{color:var(–accent);}
 .nav-icon{font-size:21px;line-height:1;}
-.nav-btn::after{content:’’;position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:0;height:2px;background:var(–accent);border-radius:2px 2px 0 0;transition:width .2s;}
+.nav-btn::after{
+content:’’;position:absolute;bottom:0;left:50%;transform:translateX(-50%);
+width:0;height:2px;background:var(–accent);
+border-radius:2px 2px 0 0;transition:width .2s;
+}
 .nav-btn.active::after{width:28px;}
 .nav-btn.nav-add{color:var(–accent);font-weight:700;}
 .nav-btn.nav-add .nav-icon{font-size:25px;}
 
-/* CARDS */
+/* ── CARDS ── */
 .card{background:var(–surface);border:1px solid var(–border);border-radius:var(–radius);padding:18px 20px;}
 .stat-card{background:var(–surface);border:1px solid var(–border);border-radius:var(–radius);padding:16px 18px;}
 .stat-label{font-size:11px;color:var(–text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
@@ -85,11 +186,11 @@ body{height:100%;height:-webkit-fill-available;background:var(--bg);color:var(--
 .section-title{font-size:11px;color:var(–text-muted);text-transform:uppercase;letter-spacing:.06em;font-weight:700;margin-bottom:12px;}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 
-/* PROGRESS */
+/* ── PROGRESS ── */
 .progress-wrap{height:6px;background:var(–border);border-radius:99px;overflow:hidden;}
 .progress-bar{height:100%;border-radius:99px;transition:width .5s ease;}
 
-/* TRANSACTIONS */
+/* ── TRANSACTIONS ── */
 .tx-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(–border);cursor:pointer;}
 .tx-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
 .tx-info{flex:1;min-width:0;}
@@ -99,21 +200,37 @@ body{height:100%;height:-webkit-fill-available;background:var(--bg);color:var(--
 .tx-detail{display:none;padding:10px 0 8px 52px;flex-wrap:wrap;gap:6px;}
 .tx-detail.open{display:flex;animation:fadeIn .2s ease;}
 
-/* CHIPS */
-.cat-chip{padding:5px 10px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid transparent;}
+/* ── CHIPS ── */
+.cat-chip{
+padding:6px 12px;border-radius:20px;font-size:11px;font-weight:600;
+cursor:pointer;border:1px solid transparent;
+/* FIX 12: área mínima */
+min-height:32px;display:inline-flex;align-items:center;
+}
 .chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;}
 .chips::-webkit-scrollbar{display:none;}
-.chip{padding:6px 14px;border-radius:20px;border:1px solid var(–border);background:none;color:var(–text-muted);font-size:12px;font-family:‘DM Sans’,sans-serif;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.chip{
+padding:6px 14px;border-radius:20px;border:1px solid var(–border);
+background:none;color:var(–text-muted);font-size:12px;
+font-family:‘DM Sans’,sans-serif;cursor:pointer;white-space:nowrap;flex-shrink:0;
+min-height:36px;
+}
 .chip.active{background:var(–accent-dim);border-color:var(–accent);color:var(–accent);}
 
-/* CAT GRID */
+/* ── CAT GRID ── */
 .cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
-.cat-btn{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;border-radius:var(–radius-sm);border:1px solid var(–border);background:none;cursor:pointer;}
+.cat-btn{
+display:flex;flex-direction:column;align-items:center;gap:4px;
+padding:10px 4px;border-radius:var(–radius-sm);border:1px solid var(–border);
+background:none;cursor:pointer;
+/* FIX 12: mínimo tátil */
+min-height:60px;
+}
 .cat-btn .ci{font-size:18px;}
 .cat-btn .cl{font-size:9px;color:var(–text-muted);text-align:center;line-height:1.2;}
 .cat-btn.selected{border-color:currentColor;background:var(–accent-dim);}
 
-/* SCORE */
+/* ── SCORE ── */
 .score-wrap{display:flex;align-items:center;gap:18px;}
 .score-ring-container{position:relative;width:100px;height:100px;flex-shrink:0;}
 .score-ring-container svg{transform:rotate(-90deg);}
@@ -121,62 +238,143 @@ body{height:100%;height:-webkit-fill-available;background:var(--bg);color:var(--
 .score-num{font-size:26px;font-weight:800;font-family:‘Syne’,sans-serif;}
 .score-label{font-size:9px;color:var(–text-muted);text-transform:uppercase;letter-spacing:.05em;}
 
-/* BUTTONS */
-.btn{padding:13px 20px;border-radius:var(–radius-sm);border:none;font-size:14px;font-weight:700;font-family:‘DM Sans’,sans-serif;cursor:pointer;width:100%;}
+/* ── BUTTONS ──
+FIX 12: todos os botões têm min-height 44px (Apple HIG)
+*/
+.btn{
+padding:13px 20px;border-radius:var(–radius-sm);border:none;
+font-size:14px;font-weight:700;font-family:‘DM Sans’,sans-serif;
+cursor:pointer;width:100%;min-height:44px;
+}
 .btn-accent{background:var(–accent);color:#000;}
 .btn-danger{background:var(–danger);color:#fff;}
 .btn-ghost{background:var(–border);color:var(–text-muted);}
-.btn:active{opacity:.85;}
+.btn:active{opacity:.82;}
 
-/* FORMS */
+/* ── FORMS ──
+FIX 15: font-size:16px em inputs previne zoom automático no Safari iOS.
+Nunca usar font-size < 16px em campos de input.
+*/
 .field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
 .field label{font-size:11px;color:var(–text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600;}
-.field input,.field select{background:var(–surface);border:1px solid var(–border);border-radius:var(–radius-sm);padding:12px 14px;color:var(–text);font-size:14px;font-family:‘DM Sans’,sans-serif;outline:none;width:100%;}
+.field input,.field select,.field textarea{
+background:var(–surface);border:1px solid var(–border);
+border-radius:var(–radius-sm);padding:12px 14px;
+color:var(–text);
+/* FIX 15: 16px evita zoom no iOS Safari */
+font-size:16px;
+font-family:‘DM Sans’,sans-serif;outline:none;width:100%;
+min-height:44px;
+/* FIX: remove estilo padrão iOS nos inputs */
+-webkit-appearance:none;appearance:none;
+}
 .field input:focus,.field select:focus{border-color:var(–accent);}
 .field select option{background:var(–surface2);}
 .toggle-row{display:flex;gap:8px;}
-.toggle-btn{flex:1;padding:11px;border-radius:var(–radius-sm);border:1px solid var(–border);background:none;color:var(–text-muted);font-size:13px;font-family:‘DM Sans’,sans-serif;cursor:pointer;font-weight:600;}
+.toggle-btn{
+flex:1;padding:11px;border-radius:var(–radius-sm);
+border:1px solid var(–border);background:none;color:var(–text-muted);
+font-size:14px;font-family:‘DM Sans’,sans-serif;cursor:pointer;font-weight:600;
+min-height:44px;
+}
 .toggle-btn.active{background:var(–accent-dim);border-color:var(–accent);color:var(–accent);}
 .toggle-btn.active-red.active{background:var(–danger-dim);border-color:var(–danger);color:var(–danger);}
-.search-bar{background:var(–surface);border:1px solid var(–border);border-radius:var(–radius-sm);padding:12px 14px;color:var(–text);font-size:14px;font-family:‘DM Sans’,sans-serif;outline:none;width:100%;}
+
+/* FIX 15: search-bar também precisa de 16px */
+.search-bar{
+background:var(–surface);border:1px solid var(–border);
+border-radius:var(–radius-sm);padding:12px 14px;
+color:var(–text);font-size:16px;
+font-family:‘DM Sans’,sans-serif;outline:none;width:100%;
+min-height:44px;-webkit-appearance:none;
+}
 .search-bar:focus{border-color:var(–accent);}
 
-/* UPLOAD */
+/* ── UPLOAD ── */
 .upload-area{border:2px dashed var(–border);border-radius:var(–radius);padding:28px 20px;text-align:center;cursor:pointer;}
 .upload-area:active{border-color:var(–accent);}
 
-/* MEMBER AVATAR */
+/* ── MEMBER AVATAR ── */
 .member-avatar{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;font-family:‘Syne’,sans-serif;flex-shrink:0;}
 
-/* ALERTS */
+/* ── ALERTS ── */
 .alert{border-radius:var(–radius-sm);padding:12px 14px;font-size:13px;margin-bottom:8px;line-height:1.5;}
 .alert-success{background:var(–accent-dim);border:1px solid var(–accent);color:var(–accent);}
 .alert-warning{background:var(–warning-dim);border:1px solid var(–warning);color:var(–warning);}
 .alert-danger{background:var(–danger-dim);border:1px solid var(–danger);color:var(–danger);}
 
-/* MODAL */
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);z-index:1100;display:none;align-items:flex-end;justify-content:center;}
+/* ── MODAL ──
+FIX 9: duplo rAF para animação correta no Safari iOS
+FIX 10: overscroll-behavior:contain previne scroll vazando
+FIX 16: pb seguro para quando o teclado está aberto
+*/
+.modal-bg{
+position:fixed;inset:0;
+background:rgba(0,0,0,.75);
+/* FIX 5: sem backdrop-filter — causa lag grave */
+z-index:1100;display:none;
+align-items:flex-end;justify-content:center;
+}
 .modal-bg.open{display:flex;}
-.modal{background:var(–surface2);border:1px solid var(–border);border-radius:24px 24px 0 0;padding:24px 20px;padding-bottom:calc(24px + env(safe-area-inset-bottom));width:100%;max-width:480px;max-height:88vh;overflow-y:auto;animation:slideUp .3s ease;}
+.modal{
+background:var(–surface2);border:1px solid var(–border);
+border-radius:24px 24px 0 0;
+padding:24px 20px;
+padding-bottom:max(24px, env(safe-area-inset-bottom));
+width:100%;max-width:480px;
+/* FIX 8: max-height menor para dar espaço ao teclado */
+max-height:80vh;
+overflow-y:auto;
+/* FIX 10: scroll do modal não vaza para o fundo */
+overscroll-behavior:contain;
+-webkit-overflow-scrolling:touch;
+}
+.modal.slide-up{animation:slideUp .28s cubic-bezier(.4,0,.2,1);}
 @keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
 .modal-title{font-size:17px;font-weight:700;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;}
-.modal-close{background:var(–border);border:none;color:var(–text-muted);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;}
+.modal-close{
+background:var(–border);border:none;color:var(–text-muted);
+width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:18px;
+display:flex;align-items:center;justify-content:center;
+/* FIX 12: área mínima 44pt — padding compensa */
+padding:4px;
+}
 
-/* TOAST */
-#toast{position:fixed;bottom:calc(var(–nav-h) + 12px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:var(–surface2);color:var(–text);padding:11px 22px;border-radius:40px;font-size:13px;font-weight:500;z-index:1300;box-shadow:0 4px 20px rgba(0,0,0,.4);border:1px solid var(–border);white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .3s;max-width:90vw;}
+/* ── TOAST ── */
+#toast{
+position:fixed;
+bottom:calc(var(–nav-h) + 14px + env(safe-area-inset-bottom));
+left:50%;transform:translateX(-50%);
+background:var(–surface2);color:var(–text);
+padding:11px 22px;border-radius:40px;
+font-size:14px;font-weight:500;z-index:1300;
+box-shadow:0 4px 20px rgba(0,0,0,.5);
+border:1px solid var(–border);
+white-space:nowrap;pointer-events:none;
+opacity:0;transition:opacity .3s;
+max-width:88vw;overflow:hidden;text-overflow:ellipsis;
+}
 
-/* EMPTY */
+/* ── EMPTY ── */
 .empty{text-align:center;padding:40px 20px;color:var(–text-muted);}
 .empty-icon{font-size:48px;margin-bottom:12px;opacity:.4;}
+
+/* ── SVG FIX 14 ──
+CSS custom properties não funcionam em atributo fill do SVG no iOS 14-.
+Usamos classes para definir a cor do círculo central do donut.
+*/
+.donut-hole{fill:#111318;}  /* igual a –surface, valor hardcoded para SVG */
 </style>
 
 </head>
 <body>
 <div id="app">
+
   <!-- HEADER -->
+
   <div class="header">
     <div class="header-left">
-      <button class="menu-btn" id="menuBtn">☰</button>
+      <button class="menu-btn" id="menuBtn" aria-label="Menu">☰</button>
       <div>
         <div class="header-logo">FinançaFamiliar</div>
         <div class="header-sub" id="headerSub">Carregando…</div>
@@ -188,24 +386,28 @@ body{height:100%;height:-webkit-fill-available;background:var(--bg);color:var(--
     </div>
   </div>
 
-  <!-- FIX 6: Storage warning — shown only in Private Browsing or when localStorage is blocked -->
+  <!-- FIX 6: Banner modo privado — aparece só se localStorage falhar -->
 
-  <div id="storageWarning" style="display:none;background:#f5a62322;border-bottom:1px solid var(--warning);padding:10px 16px;gap:10px;align-items:center;flex-shrink:0;z-index:49;">
-    <span style="font-size:18px;flex-shrink:0">⚠️</span>
+  <div id="storageWarning">
+    <span style="font-size:20px;flex-shrink:0">⚠️</span>
     <div style="flex:1">
-      <div style="font-size:12px;font-weight:700;color:var(--warning)">Modo de navegação privada detectado</div>
-      <div style="font-size:11px;color:var(--text-muted);margin-top:2px;line-height:1.5">Os dados não serão salvos ao fechar o app. Para salvar, use o Safari normal (não privado).</div>
+      <div style="font-size:12px;font-weight:700;color:var(--warning)">Modo privado detectado</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Dados não serão salvos ao fechar. Use o Safari normal para persistir dados.</div>
     </div>
-    <button onclick="document.getElementById('storageWarning').style.display='none'" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;flex-shrink:0;padding:4px;">✕</button>
+    <button onclick="document.getElementById('storageWarning').classList.remove('show')"
+      style="background:none;border:none;color:var(--text-muted);font-size:22px;cursor:pointer;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;">✕</button>
   </div>
+
+  <!-- SIDEBAR -->
+
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header"><h2>📊 Menu</h2><p>FinançaFamiliar v5.0</p></div>
+    <div class="sidebar-header"><h2>📊 Menu</h2><p>FinançaFamiliar v6.0</p></div>
     <div class="sidebar-nav">
       <button class="sidebar-item" data-page="transactions"><span class="sidebar-icon">📋</span> Transações</button>
       <button class="sidebar-item" data-page="budget"><span class="sidebar-icon">🎯</span> Orçamento</button>
       <button class="sidebar-item" data-page="family"><span class="sidebar-icon">👨‍👩‍👧</span> Família</button>
       <button class="sidebar-item" data-page="tips"><span class="sidebar-icon">💡</span> Dicas</button>
-      <button class="sidebar-item" data-page="import"><span class="sidebar-icon">📄</span> Importar PDF</button>
+      <button class="sidebar-item" data-page="import"><span class="sidebar-icon">📄</span> Importar / Adicionar</button>
       <button class="sidebar-item" data-page="config"><span class="sidebar-icon">⚙️</span> Configurações</button>
     </div>
     <div class="sidebar-footer">💰 Controle financeiro inteligente</div>
@@ -232,61 +434,95 @@ body{height:100%;height:-webkit-fill-available;background:var(--bg);color:var(--
     <button class="nav-btn nav-add" data-nav="add"><span class="nav-icon">➕</span>Lançar</button>
     <button class="nav-btn" data-nav="reports"><span class="nav-icon">📈</span>Dados</button>
   </nav>
-</div>
+</div><!-- /app -->
 
-<!-- MODALS -->
+<!-- ══════════════ MODAIS ══════════════ -->
 
-<!-- Quick Add -->
+<!-- Lançamento Rápido -->
 
 <div class="modal-bg" id="modalQuick">
   <div class="modal">
     <div class="modal-title">Lançamento Rápido <button class="modal-close" data-close="modalQuick">✕</button></div>
-    <div class="field"><label>Descrição</label><input id="qDesc" placeholder="Ex: iFood, Uber…"/></div>
-    <div class="field"><label>Valor (R$)</label><input id="qAmount" type="number" step="0.01" min="0" placeholder="0,00"/></div>
-    <div class="field"><label>Tipo</label><div class="toggle-row"><button class="toggle-btn active-red active" data-qtype="debit">💸 Despesa</button><button class="toggle-btn" data-qtype="credit">💰 Receita</button></div></div>
+    <div class="field"><label>Descrição</label><input id="qDesc" placeholder="Ex: iFood, Uber…" autocomplete="off"/></div>
+    <div class="field"><label>Valor (R$)</label><input id="qAmount" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00"/></div>
+    <div class="field"><label>Tipo</label>
+      <div class="toggle-row">
+        <button class="toggle-btn active-red active" data-qtype="debit">💸 Despesa</button>
+        <button class="toggle-btn" data-qtype="credit">💰 Receita</button>
+      </div>
+    </div>
     <div class="field" id="qCatField"><label>Categoria</label><div class="cat-grid" id="qCatGrid"></div></div>
     <button class="btn btn-accent" id="qSaveBtn">Adicionar</button>
   </div>
 </div>
+
 <!-- Meta -->
+
 <div class="modal-bg" id="modalGoal">
   <div class="modal">
     <div class="modal-title">Nova Meta <button class="modal-close" data-close="modalGoal">✕</button></div>
     <div class="field"><label>Nome</label><input id="goalName" placeholder="Ex: Viagem, Carro…"/></div>
-    <div class="field"><label>Valor Alvo (R$)</label><input id="goalTarget" type="number" min="0" placeholder="0,00"/></div>
-    <div class="field"><label>Valor Inicial (R$)</label><input id="goalCurrent" type="number" min="0" placeholder="0,00"/></div>
-    <div class="field"><label>Prazo</label><input id="goalDeadline" type="month"/></div>
+    <div class="field"><label>Valor Alvo (R$)</label><input id="goalTarget" type="number" inputmode="decimal" min="0" placeholder="0,00"/></div>
+    <div class="field"><label>Valor Inicial (R$)</label><input id="goalCurrent" type="number" inputmode="decimal" min="0" placeholder="0,00"/></div>
+    <!-- FIX 2: input[type=month] não suportado no Safari. Substituído por dois selects. -->
+    <div class="field">
+      <label>Prazo (Mês / Ano)</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <select id="goalMonth">
+          <option value="">Mês</option>
+          <option value="01">Janeiro</option><option value="02">Fevereiro</option>
+          <option value="03">Março</option><option value="04">Abril</option>
+          <option value="05">Maio</option><option value="06">Junho</option>
+          <option value="07">Julho</option><option value="08">Agosto</option>
+          <option value="09">Setembro</option><option value="10">Outubro</option>
+          <option value="11">Novembro</option><option value="12">Dezembro</option>
+        </select>
+        <select id="goalYear">
+          <option value="">Ano</option>
+          <option>2025</option><option>2026</option><option>2027</option>
+          <option>2028</option><option>2029</option><option>2030</option>
+        </select>
+      </div>
+    </div>
     <button class="btn btn-accent" id="goalSaveBtn">Criar Meta</button>
   </div>
 </div>
+
 <!-- Membro -->
+
 <div class="modal-bg" id="modalMember">
   <div class="modal">
     <div class="modal-title">Novo Membro <button class="modal-close" data-close="modalMember">✕</button></div>
     <div class="field"><label>Nome</label><input id="memberName" placeholder="Ex: Maria, João…"/></div>
-    <div class="field"><label>Limite Mensal (R$)</label><input id="memberLimit" type="number" min="0" placeholder="0,00"/></div>
+    <div class="field"><label>Limite Mensal (R$)</label><input id="memberLimit" type="number" inputmode="decimal" min="0" placeholder="0,00"/></div>
     <button class="btn btn-accent" id="memberSaveBtn">Adicionar</button>
   </div>
 </div>
+
 <!-- Aporte -->
+
 <div class="modal-bg" id="modalContribution">
   <div class="modal">
     <div class="modal-title">Registrar Aporte <button class="modal-close" data-close="modalContribution">✕</button></div>
     <div id="contribGoalName" style="font-size:14px;color:var(--text-muted);margin-bottom:16px;"></div>
-    <div class="field"><label>Valor (R$)</label><input id="contribAmount" type="number" min="0" placeholder="0,00"/></div>
+    <div class="field"><label>Valor (R$)</label><input id="contribAmount" type="number" inputmode="decimal" min="0" placeholder="0,00"/></div>
     <button class="btn btn-accent" id="contribSaveBtn">Confirmar Aporte</button>
   </div>
 </div>
+
 <!-- Preview Importação -->
+
 <div class="modal-bg" id="modalImportPreview">
   <div class="modal">
     <div class="modal-title">Revisar Importação <button class="modal-close" data-close="modalImportPreview">✕</button></div>
     <div id="importPreviewList"></div>
-    <button class="btn btn-accent" id="importConfirmBtn" style="margin-top:8px">✅ Confirmar Importação</button>
+    <button class="btn btn-accent" id="importConfirmBtn" style="margin-top:10px">✅ Confirmar Importação</button>
     <button class="btn btn-ghost" data-close="modalImportPreview" style="margin-top:8px">Cancelar</button>
   </div>
 </div>
-<!-- Confirmação (substitui confirm() nativo) -->
+
+<!-- Confirmação genérica (FIX: sem confirm() nativo) -->
+
 <div class="modal-bg" id="modalConfirm">
   <div class="modal">
     <div class="modal-title">⚠️ Confirmar <button class="modal-close" data-close="modalConfirm">✕</button></div>
@@ -301,33 +537,53 @@ body{height:100%;height:-webkit-fill-available;background:var(--bg);color:var(--
 <script>
 'use strict';
 
-// ─── CONSTANTS ───────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════
+// CONSTANTS
+// ══════════════════════════════════════════════════════
 const CATS=[
   {id:'alimentacao',label:'Alimentação',icon:'🍽️',color:'#fb923c',lim:1500},
-  {id:'transporte', label:'Transporte', icon:'🚗',color:'#38bdf8',lim:600},
-  {id:'moradia',    label:'Moradia',    icon:'🏠',color:'#a78bfa',lim:2000},
-  {id:'saude',      label:'Saúde',      icon:'💊',color:'#f472b6',lim:400},
-  {id:'educacao',   label:'Educação',   icon:'📚',color:'#34d399',lim:800},
-  {id:'lazer',      label:'Lazer',      icon:'🎬',color:'#fbbf24',lim:500},
-  {id:'assinaturas',label:'Assinaturas',icon:'📱',color:'#60a5fa',lim:300},
-  {id:'renda',      label:'Renda',      icon:'💼',color:'#00e5a0',lim:0},
-  {id:'outros',     label:'Outros',     icon:'📦',color:'#9ca3af',lim:400},
+  {id:'transporte', label:'Transporte', icon:'🚗', color:'#38bdf8',lim:600},
+  {id:'moradia',    label:'Moradia',    icon:'🏠', color:'#a78bfa',lim:2000},
+  {id:'saude',      label:'Saúde',      icon:'💊', color:'#f472b6',lim:400},
+  {id:'educacao',   label:'Educação',   icon:'📚', color:'#34d399',lim:800},
+  {id:'lazer',      label:'Lazer',      icon:'🎬', color:'#fbbf24',lim:500},
+  {id:'assinaturas',label:'Assinaturas',icon:'📱', color:'#60a5fa',lim:300},
+  {id:'renda',      label:'Renda',      icon:'💼', color:'#00e5a0',lim:0},
+  {id:'outros',     label:'Outros',     icon:'📦', color:'#9ca3af',lim:400},
 ];
 const MEMBER_COLORS=['#00e5a0','#a78bfa','#38bdf8','#fb923c','#f472b6','#fbbf24','#34d399','#60a5fa'];
+
+// FIX 18: palavras-chave testadas com \b (word boundary) para evitar
+// falsos positivos — ex: "pagamento de boleto" não deve virar crédito.
 const KW={
-  alimentacao:['ifood','rappi','mcdonalds','burger','pizza','restaurante','padaria','supermercado','mercado','carrefour','extra','pao de acucar','atacadao','lanchonete','sushi','delivery','uber eats'],
-  transporte:['uber','99taxi','cabify','combustivel','gasolina','etanol','shell','posto','estacionamento','pedagio','onibus','metro','passagem','taxi'],
-  moradia:['aluguel','condominio','iptu','energia','eletricidade','agua','saneamento','gas','internet','vivo','claro','tim','oi','net'],
-  saude:['farmacia','drogasil','drogaraia','ultrafarma','medico','consulta','clinica','hospital','laboratorio','exame','plano de saude','unimed'],
-  educacao:['escola','faculdade','cursinho','idioma','curso','livro','material','alura','udemy','coursera'],
-  lazer:['cinema','netflix','spotify','amazon prime','disney','hbo','deezer','youtube','steam','playstation','xbox','teatro','show','ingresso','parque','viagem','hotel','airbnb','booking'],
-  assinaturas:['netflix','spotify','amazon','disney','hbo','apple','google one','icloud','dropbox','adobe','canva','chatgpt'],
-  renda:['salario','salário','pagamento recebido','deposito','depósito','pix recebido','ted recebido','transferencia recebida','credito em conta'],
+  alimentacao:['ifood','rappi','mcdonalds','burger','pizza','restaurante','padaria','supermercado','mercado','carrefour','atacadao','lanchonete','sushi','delivery','hortifrutti'],
+  transporte:['uber','99taxi','cabify','gasolina','etanol','shell','posto','estacionamento','pedagio','onibus','metro','passagem'],
+  moradia:['aluguel','condominio','iptu','eletricidade','saneamento','internet','vivo','claro','tim'],
+  saude:['farmacia','drogasil','drogaraia','ultrafarma','medico','consulta','hospital','laboratorio','unimed'],
+  educacao:['escola','faculdade','cursinho','curso','livro','alura','udemy','coursera'],
+  lazer:['cinema','netflix','disney','hbo','deezer','steam','playstation','xbox','teatro','ingresso','airbnb','booking'],
+  assinaturas:['spotify','amazon prime','apple','google one','icloud','dropbox','adobe','canva','chatgpt'],
+  // FIX 18: renda usa palavras mais específicas para crédito, não genéricas
+  renda:['salario recebido','credito em conta','pix recebido','ted recebido','transferencia recebida','deposito identificado'],
 };
+
+// FIX 18: creditLine verifica palavras específicas de crédito bancário,
+// não toda ocorrência de "pagamento" (que pode ser despesa).
+function isCreditLine(line){
+  const l=line.toLowerCase();
+  return /\bsalario\b|\bsalário\b/.test(l)
+    || /pix\s+recebido|pix\s+entrada/i.test(l)
+    || /ted\s+recebido|ted\s+entrada/i.test(l)
+    || /deposito\s+identificado/i.test(l)
+    || /credito\s+em\s+conta/i.test(l)
+    || /transferencia\s+recebida/i.test(l)
+    || /estorno/i.test(l);
+}
+
 const DEMO=[
   {id:'d1',date:'2025-04-03',description:'iFood - Jantar Família',amount:87.50,type:'debit',category:'alimentacao',memberId:''},
   {id:'d2',date:'2025-04-02',description:'Uber - Trabalho',amount:32.90,type:'debit',category:'transporte',memberId:''},
-  {id:'d3',date:'2025-04-01',description:'Netflix',amount:55.90,type:'debit',category:'assinaturas',memberId:''},
+  {id:'d3',date:'2025-04-01',description:'Netflix',amount:55.90,type:'debit',category:'lazer',memberId:''},
   {id:'d4',date:'2025-04-01',description:'Supermercado Extra',amount:423.60,type:'debit',category:'alimentacao',memberId:''},
   {id:'d5',date:'2025-04-01',description:'Condomínio Abril',amount:850.00,type:'debit',category:'moradia',memberId:''},
   {id:'d6',date:'2025-03-31',description:'Drogasil - Remédios',amount:118.40,type:'debit',category:'saude',memberId:''},
@@ -337,27 +593,54 @@ const DEMO=[
   {id:'d10',date:'2025-03-25',description:'Conta de Luz',amount:187.30,type:'debit',category:'moradia',memberId:''},
 ];
 
-// ─── UTILS ───────────────────────────────────────────────────────────────────
+const CHATGPT_PROMPT=`Você é um assistente de finanças pessoais. Vou te enviar o texto ou imagem de um extrato bancário brasileiro.
+
+Extraia TODAS as transações e retorne APENAS um CSV com este formato, sem texto antes ou depois:
+
+data,descricao,valor,tipo
+AAAA-MM-DD,Descrição,123.45,debito
+AAAA-MM-DD,Salário recebido,5000.00,credito
+
+Regras:
+- data: formato AAAA-MM-DD
+- descricao: texto limpo sem vírgulas, máx 60 caracteres
+- valor: número positivo com ponto decimal
+- tipo: apenas "debito" ou "credito"
+- credito: salários, PIX recebidos, TED recebidos, estornos, depósitos
+- debito: compras, pagamentos, saques, tarifas
+- Ignorar totais, saldos, cabeçalhos e rodapés
+- Se houver parcelas (1/12), incluir cada uma separada
+- Não inventar transações — extrair apenas o visível
+
+Retorne SOMENTE o CSV começando pela linha: data,descricao,valor,tipo`;
+
+// ══════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════
 const U={
-  fmt(v){return 'R$ '+Math.abs(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});},
+  fmt(v){return'R$ '+Math.abs(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});},
   fmtShort(v){return v>=1000?'R$ '+(v/1000).toFixed(1).replace('.',',')+' k':this.fmt(v);},
-  fmtDate(d){if(!d)return'';const[y,m,day]=d.split('-');return`${day}/${m}`;},
+  fmtDate(d){if(!d)return'';const p=d.split('-');return p.length===3?`${p[2]}/${p[1]}`:'';},
   today(){return new Date().toISOString().split('T')[0];},
   uid(p='id'){return`${p}_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;},
   pct(v,t){return t>0?Math.min(100,Math.round(v/t*100)):0;},
   barColor(p){return p>=100?'var(--danger)':p>=75?'var(--warning)':'var(--accent)';},
-  num(v){const n=parseFloat(String(v||'').replace(',','.'));return isNaN(n)?0:n;},
+  num(v){const n=parseFloat(String(v||'').replace(',','.'));return isNaN(n)?0:Math.max(0,n);},
   esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');},
   cat(id){return CATS.find(c=>c.id===id)||CATS[CATS.length-1];},
+  // FIX 17: autoCat preserva acentos — usa normalize para comparação mas mantém descrição original
   autoCat(desc){
     const d=desc.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-    for(const[cat,kws] of Object.entries(KW)){if(kws.some(k=>d.includes(k)))return cat;}
-    return 'outros';
+    for(const[cat,kws]of Object.entries(KW)){
+      if(kws.some(k=>d.includes(k.normalize('NFD').replace(/[\u0300-\u036f]/g,''))))return cat;
+    }
+    return'outros';
   },
-  isCreditLine(line){return /crédito|credito|pagamento rec|pix rec|ted rec|depósito|deposito|salário|salario|credito em conta/i.test(line);},
 };
 
-// ─── STATE ───────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════
 const S={
   transactions:[],members:[],goals:[],
   config:{familyName:'Minha Família',monthlyIncome:8500,emergencyFund:0},
@@ -385,69 +668,100 @@ const S={
   updConfig(cfg){Object.assign(this.config,cfg);this.save();},
   setCatLim(id,v){this.catLimits[id]=v;this.save();},
 
+  // FIX 6: detecta falha de localStorage e avisa o usuário
+  _storageWarned:false,
   save(){
     try{
-      localStorage.setItem('ff_v5',JSON.stringify({
+      localStorage.setItem('ff_v6',JSON.stringify({
         transactions:this.transactions,members:this.members,goals:this.goals,
-        config:this.config,catLimits:this.catLimits,ui:{txFilter:this.ui.txFilter}
+        config:this.config,catLimits:this.catLimits,ui:{txFilter:this.ui.txFilter},
       }));
-      // Clear any previous storage warning if save succeeds
-      this._storageOk=true;
     }catch(e){
-      // FIX 6: localStorage throws QuotaExceededError in Safari Private Browsing.
-      // Warn the user once so they know data won't persist.
       if(!this._storageWarned){
         this._storageWarned=true;
-        // Use setTimeout so we don't block the current render cycle
-        setTimeout(()=>{
-          const el=document.getElementById('storageWarning');
-          if(el)el.style.display='flex';
-        },500);
+        setTimeout(()=>document.getElementById('storageWarning')?.classList.add('show'),400);
       }
-      console.warn('localStorage unavailable — running in memory-only mode:',e);
     }
   },
+
   load(){
     try{
-      const raw=localStorage.getItem('ff_v5');
-      if(raw){const p=JSON.parse(raw);this.transactions=p.transactions||[];this.members=p.members||[];this.goals=p.goals||[];Object.assign(this.config,p.config||{});this.catLimits=p.catLimits||{};if(p.ui?.txFilter)this.ui.txFilter=p.ui.txFilter;return;}
+      const raw=localStorage.getItem('ff_v6');
+      if(raw){
+        const p=JSON.parse(raw);
+        this.transactions=p.transactions||[];
+        this.members=p.members||[];
+        this.goals=p.goals||[];
+        Object.assign(this.config,p.config||{});
+        this.catLimits=p.catLimits||{};
+        if(p.ui?.txFilter)this.ui.txFilter=p.ui.txFilter;
+        return;
+      }
     }catch(e){console.warn('load',e);}
+    // Primeiro uso — dados de demonstração
     this.transactions=JSON.parse(JSON.stringify(DEMO));
     CATS.forEach(c=>{this.catLimits[c.id]=c.lim;});
   },
-  // FIX: clearAll zera TUDO — começa vazio, sem dados demo
+
   clearAll(){
     this.transactions=[];this.members=[];this.goals=[];
     this.config={familyName:'Minha Família',monthlyIncome:0,emergencyFund:0};
-    this.catLimits={};
-    CATS.forEach(c=>{this.catLimits[c.id]=c.lim;});
+    this.catLimits={};CATS.forEach(c=>{this.catLimits[c.id]=c.lim;});
     this.ui={page:'dashboard',txFilter:'all',search:''};
-    try{localStorage.removeItem('ff_v5');}catch(e){}
+    try{localStorage.removeItem('ff_v6');}catch(e){}
     this.save();
   },
 };
 
-// ─── TOAST ───────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════════════
 let _tt;
 function toast(msg){
   const el=document.getElementById('toast');
   if(!el)return;
   el.textContent=msg;el.style.opacity='1';
-  clearTimeout(_tt);_tt=setTimeout(()=>{el.style.opacity='0';},3000);
+  clearTimeout(_tt);_tt=setTimeout(()=>{el.style.opacity='0';},3200);
 }
 
-// ─── MODAL ───────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════
+// MODAL — FIX 9: duplo rAF garante frame de diferença no Safari iOS
+// ══════════════════════════════════════════════════════
 let _confirmCb=null,_pendingGoalId=null,_pendingImport=[];
 
-function openModal(id){const m=document.getElementById(id);if(m){m.style.display='flex';requestAnimationFrame(()=>m.classList.add('open'));}}
-function closeModal(id){const m=document.getElementById(id);if(m){m.classList.remove('open');setTimeout(()=>{m.style.display='none';},300);}}
-function showConfirm(msg,cb){document.getElementById('confirmMsg').textContent=msg;_confirmCb=cb;openModal('modalConfirm');}
+function openModal(id){
+  const m=document.getElementById(id);
+  if(!m)return;
+  m.style.display='flex';
+  // FIX 9: dois requestAnimationFrame garantem que display:flex foi processado
+  // antes de adicionar a classe que dispara a animação. Um único rAF não é suficiente
+  // no Safari iOS — a animação não executa.
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    m.classList.add('open');
+    const modal=m.querySelector('.modal');
+    if(modal){modal.classList.remove('slide-up');void modal.offsetWidth;modal.classList.add('slide-up');}
+  }));
+}
+function closeModal(id){
+  const m=document.getElementById(id);
+  if(!m)return;
+  m.classList.remove('open');
+  setTimeout(()=>{m.style.display='none';},320);
+}
+function showConfirm(msg,cb){
+  document.getElementById('confirmMsg').textContent=msg;
+  _confirmCb=cb;
+  openModal('modalConfirm');
+}
 
-// ─── SCORE ───────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════
+// SCORE
+// ══════════════════════════════════════════════════════
 function calcScore(){
   let score=0;const details=[];
   const income=S.config.monthlyIncome||S.totalC()||1;
-  const bal=S.balance();const td=S.totalD();const savings=Math.max(0,bal);const reserve=S.config.emergencyFund||0;
+  const bal=S.balance();const td=S.totalD();
+  const savings=Math.max(0,bal);const reserve=S.config.emergencyFund||0;
   bal>=0?(score+=30,details.push('✅ Saldo positivo (+30)')):details.push('❌ Saldo negativo (0)');
   savings>=income*.1?(score+=20,details.push('✅ Poupança ≥ 10% (+20)')):details.push('⚠️ Poupança abaixo de 10% (0)');
   const over=CATS.filter(c=>c.id!=='renda'&&S.catTotal(c.id)>S.catLim(c.id)&&S.catLim(c.id)>0);
@@ -460,7 +774,9 @@ function calcScore(){
   return{value:score,color,msg,details};
 }
 
-// ─── TIPS ────────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════
+// TIPS
+// ══════════════════════════════════════════════════════
 function genTips(){
   const tips=[];const bal=S.balance();const td=S.totalD();const income=S.config.monthlyIncome||1;const reserve=S.config.emergencyFund||0;
   if(bal<0)tips.push({icon:'🚨',color:'var(--danger)',title:'Gastos maiores que receitas!',text:`Saldo negativo de ${U.fmt(Math.abs(bal))}. Corte gastos imediatamente.`});
@@ -471,30 +787,37 @@ function genTips(){
   const poup=Math.max(0,bal);if(poup<income*.1)tips.push({icon:'🏦',color:'var(--accent)',title:'Aumente sua poupança',text:`Meta: 20% da renda (${U.fmt(income*.2)}). Transfira automaticamente no dia do salário.`});
   const mc=td>0?(reserve/td).toFixed(1):'0';
   tips.push({icon:'🛡️',color:'var(--green)',title:`Reserva: ${mc} meses`,text:`Meta: 6 meses = ${U.fmt(td*6)}. Reserva atual: ${U.fmt(reserve)}.`});
-  tips.push({icon:'📐',color:'var(--accent)',title:'Regra 50·30·20',text:'50% necessidades · 30% desejos · 20% poupança.'});
+  tips.push({icon:'📐',color:'var(--accent)',title:'Regra 50·30·20',text:'50% necessidades · 30% desejos · 20% poupança e investimentos.'});
   return tips;
 }
 
-// ─── PDF PARSER ──────────────────────────────────────────────────────────────
-function parsePDF(text){
+// ══════════════════════════════════════════════════════
+// CSV PARSER
+// ══════════════════════════════════════════════════════
+function parseCSV(text){
   const txs=[];
-  text.split('\n').forEach(line=>{
-    const dm=line.match(/(\d{2}[\/\-]\d{2}(?:[\/\-]\d{2,4})?)/);
-    const vm=line.match(/R?\$?\s*([\d]{1,3}(?:\.[\d]{3})*,\d{2})/);
-    if(!dm||!vm)return;
-    const raw=parseFloat(vm[1].replace(/\./g,'').replace(',','.'));
-    if(raw<=0||raw>100000)return;
-    const isCred=U.isCreditLine(line);
-    let desc=line.replace(dm[0],'').replace(vm[0],'').replace(/[|*—\-]{2,}/g,' ').replace(/\s+/g,' ').trim().slice(0,60)||'Transação importada';
-    const parts=dm[1].split(/[\/\-]/);
-    let dateISO=U.today();
-    if(parts.length>=2){const day=parts[0].padStart(2,'0'),month=parts[1].padStart(2,'0'),year=parts[2]?(parts[2].length===2?'20'+parts[2]:parts[2]):new Date().getFullYear();dateISO=`${year}-${month}-${day}`;}
-    txs.push({id:U.uid('imp'),date:dateISO,description:desc,amount:raw,type:isCred?'credit':'debit',category:isCred?'renda':U.autoCat(desc),memberId:''});
-  });
+  const lines=text.trim().split('\n');
+  let start=0;
+  if(lines[0]&&/data|date|descri|valor|amount/i.test(lines[0]))start=1;
+  for(let i=start;i<lines.length;i++){
+    const line=lines[i].trim();if(!line)continue;
+    const sep=line.includes(';')?';':',';
+    const parts=line.split(sep).map(p=>p.replace(/^["']|["']$/g,'').trim());
+    if(parts.length<4)continue;
+    const[dateRaw,desc,valRaw,tipoRaw]=parts;
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(dateRaw))continue;
+    const amount=parseFloat(valRaw.replace(',','.'));
+    if(isNaN(amount)||amount<=0)continue;
+    const isCredit=/cred/i.test(tipoRaw);
+    const descClean=desc.slice(0,60)||'Transação importada';
+    txs.push({id:U.uid('csv'),date:dateRaw,description:descClean,amount:Math.abs(amount),type:isCredit?'credit':'debit',category:isCredit?'renda':U.autoCat(descClean),memberId:''});
+  }
   return txs;
 }
 
-// ─── HEADER ──────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════
+// HEADER
+// ══════════════════════════════════════════════════════
 function updateHeader(){
   const bal=S.balance();
   const hb=document.getElementById('headerBalance');
@@ -503,7 +826,9 @@ function updateHeader(){
   if(hs)hs.textContent=`${U.esc(S.config.familyName)} · ${S.transactions.length} transações`;
 }
 
-// ─── NAVIGATION ──────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════════
 function goTo(page){
   S.ui.page=page;
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -516,18 +841,20 @@ function goTo(page){
 }
 function renderPage(page){
   switch(page){
-    case 'dashboard':renderDashboard();break;
-    case 'transactions':renderTransactions();break;
-    case 'budget':renderBudget();break;
-    case 'family':renderFamily();break;
-    case 'tips':renderTips();break;
-    case 'import':renderImport();break;
-    case 'reports':renderReports();break;
-    case 'config':renderConfig();break;
+    case'dashboard':renderDashboard();break;
+    case'transactions':renderTransactions();break;
+    case'budget':renderBudget();break;
+    case'family':renderFamily();break;
+    case'tips':renderTips();break;
+    case'import':renderImport();break;
+    case'reports':renderReports();break;
+    case'config':renderConfig();break;
   }
 }
 
-// ─── DASHBOARD ───────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════════════════
 function renderDashboard(){
   const el=document.getElementById('page-dashboard');
   const sc=calcScore();
@@ -546,9 +873,14 @@ function renderDashboard(){
         <div class="score-ring-container">
           <svg width="100" height="100" viewBox="0 0 100 100">
             <circle cx="50" cy="50" r="42" fill="none" stroke="var(--border)" stroke-width="10"/>
-            <circle cx="50" cy="50" r="42" fill="none" stroke="${sc.color}" stroke-width="10" stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="${264-(264*sc.value/100)}"/>
+            <circle cx="50" cy="50" r="42" fill="none" stroke="${sc.color}" stroke-width="10"
+              stroke-linecap="round" stroke-dasharray="264"
+              stroke-dashoffset="${264-(264*sc.value/100)}"/>
           </svg>
-          <div class="score-center"><div class="score-num" style="color:${sc.color}">${sc.value}</div><div class="score-label">Score</div></div>
+          <div class="score-center">
+            <div class="score-num" style="color:${sc.color}">${sc.value}</div>
+            <div class="score-label">Score</div>
+          </div>
         </div>
         <div style="flex:1">
           <div style="font-size:14px;font-weight:700;margin-bottom:6px;color:${sc.color}">${sc.msg}</div>
@@ -565,8 +897,9 @@ function renderDashboard(){
     </div>
     <div class="card">
       <div class="section-title">🔥 Maiores Gastos</div>
-      ${top.length===0?'<div class="empty-text" style="color:var(--text-muted)">Sem despesas registradas</div>':
-        top.map(t=>{const c=U.cat(t.category);return`
+      ${top.length===0
+        ?'<div class="empty-text" style="color:var(--text-muted);font-size:13px">Sem despesas registradas</div>'
+        :top.map(t=>{const c=U.cat(t.category);return`
           <div class="tx-item" style="cursor:default">
             <div class="tx-icon" style="background:${c.color}22">${c.icon}</div>
             <div class="tx-info"><div class="tx-desc">${U.esc(t.description)}</div><div class="tx-meta">${c.label} · ${U.fmtDate(t.date)}</div></div>
@@ -574,22 +907,40 @@ function renderDashboard(){
           </div>`;}).join('')}
     </div>`;
 
-  // Draw donut
+  // FIX 14: donut usa classe CSS .donut-hole em vez de fill="var(--surface)"
+  // pois CSS custom properties não funcionam em atributos SVG no Safari iOS 14-
   const svg=document.getElementById('donutSvg');
   const leg=document.getElementById('donutLegend');
   if(!svg||!leg)return;
-  if(td===0){svg.innerHTML=`<circle cx="55" cy="55" r="42" fill="none" stroke="var(--border)" stroke-width="18"/>`;leg.innerHTML='<span style="font-size:12px;color:var(--text-muted)">Sem despesas</span>';return;}
+  if(td===0){
+    svg.innerHTML=`<circle cx="55" cy="55" r="42" fill="none" stroke="#1e2130" stroke-width="18"/>`;
+    leg.innerHTML='<span style="font-size:12px;color:var(--text-muted)">Sem despesas</span>';
+    return;
+  }
   const cx=55,cy=55,r=42;let ang=-Math.PI/2,paths='';
-  catsWV.forEach(c=>{const sweep=2*Math.PI*(S.catTotal(c.id)/td);const x1=cx+r*Math.cos(ang),y1=cy+r*Math.sin(ang),x2=cx+r*Math.cos(ang+sweep),y2=cy+r*Math.sin(ang+sweep);paths+=`<path d="M${cx},${cy} L${x1},${y1} A${r},${r},0,${sweep>Math.PI?1:0},1,${x2},${y2}Z" fill="${c.color}" opacity=".9"/>`;ang+=sweep;});
-  svg.innerHTML=`${paths}<circle cx="${cx}" cy="${cy}" r="28" fill="var(--surface)"/>`;
-  leg.innerHTML=catsWV.slice(0,5).map(c=>`<div style="display:flex;align-items:center;gap:8px;font-size:12px"><div style="width:8px;height:8px;border-radius:2px;background:${c.color};flex-shrink:0"></div><span style="color:var(--text-muted);flex:1">${c.icon} ${c.label}</span><span style="font-weight:700;color:${c.color}">${U.fmtShort(S.catTotal(c.id))}</span></div>`).join('');
+  catsWV.forEach(c=>{
+    const sweep=2*Math.PI*(S.catTotal(c.id)/td);
+    const x1=cx+r*Math.cos(ang),y1=cy+r*Math.sin(ang);
+    const x2=cx+r*Math.cos(ang+sweep),y2=cy+r*Math.sin(ang+sweep);
+    // FIX 14: fill com valor hexadecimal hardcoded, não var(--surface)
+    paths+=`<path d="M${cx},${cy} L${x1},${y1} A${r},${r},0,${sweep>Math.PI?1:0},1,${x2},${y2}Z" fill="${c.color}" opacity=".9"/>`;
+    ang+=sweep;
+  });
+  // FIX 14: círculo central usa fill="#111318" (valor de --surface) em vez de var()
+  svg.innerHTML=`${paths}<circle cx="${cx}" cy="${cy}" r="28" fill="#111318"/>`;
+  leg.innerHTML=catsWV.slice(0,5).map(c=>`
+    <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+      <div style="width:8px;height:8px;border-radius:2px;background:${c.color};flex-shrink:0"></div>
+      <span style="color:var(--text-muted);flex:1">${c.icon} ${c.label}</span>
+      <span style="font-weight:700;color:${c.color}">${U.fmtShort(S.catTotal(c.id))}</span>
+    </div>`).join('');
 }
 
-// ─── TRANSACTIONS ─────────────────────────────────────────────────────────────
-
-// Returns filtered+sorted transaction list based on current UI state
+// ══════════════════════════════════════════════════════
+// TRANSACTIONS — FIX 1: busca não re-renderiza o input
+// ══════════════════════════════════════════════════════
 function getFilteredTxs(){
-  const filter=S.ui.txFilter; const search=S.ui.search;
+  const filter=S.ui.txFilter;const search=S.ui.search;
   let txs=[...S.transactions].sort((a,b)=>new Date(b.date)-new Date(a.date));
   if(filter==='credit')txs=txs.filter(t=>t.type==='credit');
   else if(filter==='debit')txs=txs.filter(t=>t.type==='debit');
@@ -598,8 +949,7 @@ function getFilteredTxs(){
   return txs;
 }
 
-// FIX 1: Renders ONLY the list + summary — does NOT replace the input or chips.
-// This means the search input keeps focus and the keyboard stays open on iOS.
+// Atualiza apenas a lista — NÃO toca no input (FIX 1)
 function renderTransactionsList(txs){
   const listEl=document.getElementById('txList');
   const sumEl=document.getElementById('txSummary');
@@ -610,34 +960,47 @@ function renderTransactionsList(txs){
   listEl.innerHTML=txs.length===0
     ?'<div class="empty"><div class="empty-icon">📭</div><div>Nenhuma transação</div></div>'
     :txs.map(t=>{
-        const c=U.cat(t.category);
-        const mem=S.members.find(m=>m.id===t.memberId);
-        const sid=t.id.replace(/[^a-zA-Z0-9_]/g,'_');
-        return`
-          <div class="tx-item" data-txid="${U.esc(t.id)}">
-            <div class="tx-icon" style="background:${c.color}22">${c.icon}</div>
-            <div class="tx-info"><div class="tx-desc">${U.esc(t.description)}</div><div class="tx-meta">${U.fmtDate(t.date)} · <span style="color:${c.color}">${c.label}</span>${mem?` · ${U.esc(mem.name)}`:''}</div></div>
-            <div class="tx-amount" style="color:${t.type==='credit'?'var(--accent)':'var(--text)'}">${t.type==='credit'?'+':'-'}${U.fmt(t.amount)}</div>
+      const c=U.cat(t.category);
+      const mem=S.members.find(m=>m.id===t.memberId);
+      const sid=t.id.replace(/[^a-zA-Z0-9_]/g,'_');
+      return`
+        <div class="tx-item" data-txid="${U.esc(t.id)}">
+          <div class="tx-icon" style="background:${c.color}22">${c.icon}</div>
+          <div class="tx-info">
+            <div class="tx-desc">${U.esc(t.description)}</div>
+            <div class="tx-meta">${U.fmtDate(t.date)} · <span style="color:${c.color}">${c.label}</span>${mem?` · ${U.esc(mem.name)}`:''}</div>
           </div>
-          <div class="tx-detail" id="det_${sid}">
-            ${CATS.filter(c=>c.id!=='renda').map(c=>`<button class="cat-chip" data-chcat="${U.esc(t.id)}|${c.id}" style="background:${t.category===c.id?c.color+'33':'var(--border)'};color:${t.category===c.id?c.color:'var(--text-muted)'};border-color:${t.category===c.id?c.color:'transparent'}">${c.icon} ${c.label}</button>`).join('')}
-            <button class="cat-chip" data-deltx="${U.esc(t.id)}" style="background:var(--danger-dim);color:var(--danger)">🗑️ Excluir</button>
-          </div>`;
-      }).join('');
+          <div class="tx-amount" style="color:${t.type==='credit'?'var(--accent)':'var(--text)'}">${t.type==='credit'?'+':'-'}${U.fmt(t.amount)}</div>
+        </div>
+        <div class="tx-detail" id="det_${sid}">
+          ${CATS.filter(c=>c.id!=='renda').map(c=>`
+            <button class="cat-chip" data-chcat="${U.esc(t.id)}|${c.id}"
+              style="background:${t.category===c.id?c.color+'33':'var(--border)'};
+                     color:${t.category===c.id?c.color:'var(--text-muted)'};
+                     border-color:${t.category===c.id?c.color:'transparent'}">
+              ${c.icon} ${c.label}
+            </button>`).join('')}
+          <button class="cat-chip" data-deltx="${U.esc(t.id)}" style="background:var(--danger-dim);color:var(--danger)">🗑️ Excluir</button>
+        </div>`;
+    }).join('');
 }
 
-// Renders the full page (shell + chips + list). Called on page navigation and filter changes.
+// Renderiza a página completa (shell + chips + lista)
 function renderTransactions(){
   const el=document.getElementById('page-transactions');
   const filter=S.ui.txFilter;
-  const filters=[{id:'all',label:'Todos'},{id:'debit',label:'💸 Despesas'},{id:'credit',label:'💰 Receitas'},...CATS.map(c=>({id:c.id,label:`${c.icon} ${c.label}`}))];
-
+  const filters=[
+    {id:'all',label:'Todos'},{id:'debit',label:'💸 Despesas'},{id:'credit',label:'💰 Receitas'},
+    ...CATS.map(c=>({id:c.id,label:`${c.icon} ${c.label}`}))
+  ];
   el.innerHTML=`
     <input class="search-bar" id="txSearch"
       placeholder="🔍 Buscar transação…"
       value="${U.esc(S.ui.search)}"
-      style="font-size:16px;"/>
-    <div class="chips">${filters.map(f=>`<button class="chip${filter===f.id?' active':''}" data-filter="${f.id}">${f.label}</button>`).join('')}</div>
+      autocomplete="off" autocorrect="off" autocapitalize="off"/>
+    <div class="chips" id="txChips">
+      ${filters.map(f=>`<button class="chip${filter===f.id?' active':''}" data-filter="${f.id}">${f.label}</button>`).join('')}
+    </div>
     <div class="card" style="padding:10px 4px">
       <div id="txSummary" style="padding:4px 16px 12px;font-size:12px;color:var(--text-muted)"></div>
       <div id="txList"></div>
@@ -645,9 +1008,8 @@ function renderTransactions(){
 
   renderTransactionsList(getFilteredTxs());
 
-  // FIX 1: Bind input event ONCE, never call focus() programmatically.
-  // Auto-focus on iOS causes: screen scroll jump, keyboard close/reopen on re-render.
-  // font-size:16px prevents iOS Safari auto-zoom when input is focused.
+  // FIX 1: vincula input SEM chamar focus() — nunca forçar foco programaticamente no iOS.
+  // O font-size:16px no CSS já previne o zoom automático (fix 15).
   const si=document.getElementById('txSearch');
   if(si){
     si.addEventListener('input',e=>{
@@ -657,8 +1019,9 @@ function renderTransactions(){
   }
 }
 
-
-// ─── BUDGET ──────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════
+// BUDGET
+// ══════════════════════════════════════════════════════
 function renderBudget(){
   const el=document.getElementById('page-budget');
   const income=S.config.monthlyIncome||S.totalC()||1;
@@ -677,7 +1040,8 @@ function renderBudget(){
       ${rules.map(r=>{const p=U.pct(r.val,r.target);const ov=r.val>r.target;return`
         <div style="margin-bottom:14px">
           <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
-            <span>${r.label}</span><span style="color:${ov?'var(--danger)':'var(--text)'}">${U.fmt(r.val)} <span style="color:var(--text-muted)">/ ${U.fmt(r.target)}</span></span>
+            <span>${r.label}</span>
+            <span style="color:${ov?'var(--danger)':'var(--text)'}">${U.fmt(r.val)} <span style="color:var(--text-muted)">/ ${U.fmt(r.target)}</span></span>
           </div>
           <div class="progress-wrap"><div class="progress-bar" style="width:${p}%;background:${ov?'var(--danger)':r.color}"></div></div>
         </div>`}).join('')}
@@ -696,7 +1060,7 @@ function renderBudget(){
     </div>
     <div style="display:flex;justify-content:space-between;align-items:center">
       <div class="section-title" style="margin-bottom:0">🎯 Metas</div>
-      <button class="btn btn-accent" id="openGoalBtn" style="width:auto;padding:7px 14px;font-size:12px">+ Nova Meta</button>
+      <button class="btn btn-accent" id="openGoalBtn" style="width:auto;padding:10px 16px;font-size:13px">+ Nova Meta</button>
     </div>
     <div id="goalsList"></div>`;
   renderGoals();
@@ -711,8 +1075,8 @@ function renderGoals(){
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <div style="font-size:14px;font-weight:700">🎯 ${U.esc(g.name)}</div>
         <div style="display:flex;gap:6px">
-          <button class="btn btn-accent" data-contribute="${g.id}" style="width:auto;padding:4px 10px;font-size:11px">+ Aporte</button>
-          <button class="btn btn-danger" data-delgoal="${g.id}" style="width:auto;padding:4px 10px;font-size:11px">🗑️</button>
+          <button class="btn btn-accent" data-contribute="${g.id}" style="width:auto;padding:6px 12px;font-size:12px">+ Aporte</button>
+          <button class="btn btn-danger" data-delgoal="${g.id}" style="width:auto;padding:6px 12px;font-size:12px">🗑️</button>
         </div>
       </div>
       <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">${U.fmt(g.currentAmount)} de ${U.fmt(g.targetAmount)}${g.deadline?` · Prazo: ${g.deadline}`:''}</div>
@@ -721,14 +1085,16 @@ function renderGoals(){
     </div>`}).join('');
 }
 
-// ─── FAMILY ──────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════
+// FAMILY
+// ══════════════════════════════════════════════════════
 function renderFamily(){
   const el=document.getElementById('page-family');
   const shared=S.debits().filter(t=>!t.memberId).reduce((s,t)=>s+t.amount,0);
   el.innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center">
       <div class="section-title" style="margin-bottom:0">👨‍👩‍👧 Membros</div>
-      <button class="btn btn-accent" id="openMemberBtn" style="width:auto;padding:7px 14px;font-size:12px">+ Adicionar</button>
+      <button class="btn btn-accent" id="openMemberBtn" style="width:auto;padding:10px 16px;font-size:13px">+ Adicionar</button>
     </div>
     <div id="membersList"></div>
     <div class="card">
@@ -741,217 +1107,156 @@ function renderFamily(){
   renderMembers();
   document.getElementById('openMemberBtn')?.addEventListener('click',()=>openModal('modalMember'));
 }
+
 function renderMembers(){
   const el=document.getElementById('membersList');if(!el)return;
   if(!S.members.length){el.innerHTML='<div class="card" style="text-align:center;color:var(--text-muted);font-size:13px">Nenhum membro cadastrado</div>';return;}
-  el.innerHTML=S.members.map((m,i)=>{const spent=S.memSpend(m.id);const p=U.pct(spent,m.limit);const col=S.memColor(i);return`
-    <div class="card" style="margin-bottom:0">
-      <div style="display:flex;align-items:center;gap:14px">
-        <div class="member-avatar" style="background:${col}22;color:${col}">${m.name.charAt(0).toUpperCase()}</div>
-        <div style="flex:1">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-            <span style="font-size:15px;font-weight:700">${U.esc(m.name)}</span>
-            <button class="btn btn-danger" data-delmem="${m.id}" style="width:auto;padding:4px 10px;font-size:11px">Remover</button>
+  el.innerHTML=S.members.map((m,i)=>{
+    const spent=S.memSpend(m.id);const p=U.pct(spent,m.limit);const col=S.memColor(i);
+    return`
+      <div class="card" style="margin-bottom:0">
+        <div style="display:flex;align-items:center;gap:14px">
+          <div class="member-avatar" style="background:${col}22;color:${col}">${m.name.charAt(0).toUpperCase()}</div>
+          <div style="flex:1">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span style="font-size:15px;font-weight:700">${U.esc(m.name)}</span>
+              <button class="btn btn-danger" data-delmem="${m.id}" style="width:auto;padding:6px 12px;font-size:12px">Remover</button>
+            </div>
+            <div style="font-size:13px;color:var(--text-muted);margin-bottom:4px">Gastou: ${U.fmt(spent)}${m.limit?` / ${U.fmt(m.limit)}`:''}</div>
+            ${m.limit?`<div class="progress-wrap"><div class="progress-bar" style="width:${p}%;background:${U.barColor(p)}"></div></div>`:''}
           </div>
-          <div style="font-size:13px;color:var(--text-muted);margin-bottom:4px">Gastou: ${U.fmt(spent)}${m.limit?` / ${U.fmt(m.limit)}`:''}</div>
-          ${m.limit?`<div class="progress-wrap"><div class="progress-bar" style="width:${p}%;background:${U.barColor(p)}"></div></div>`:''}
         </div>
-      </div>
-    </div>`}).join('');
+      </div>`;}).join('');
 }
 
-// ─── TIPS ────────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════
+// TIPS
+// ══════════════════════════════════════════════════════
 function renderTips(){
   const el=document.getElementById('page-tips');
   const sc=calcScore();const tips=genTips();
-  const cal=[{day:'01',desc:'Condomínio · Netflix · Spotify'},{day:'05',desc:'Plano de saúde'},{day:'10',desc:'Mensalidade escolar'},{day:'15',desc:'Conta de energia'},{day:'20',desc:'Internet e telefone'},{day:'Últ.',desc:'Fatura do cartão'}];
+  const cal=[
+    {day:'01',desc:'Condomínio · Netflix · Spotify'},
+    {day:'05',desc:'Plano de saúde'},
+    {day:'10',desc:'Mensalidade escolar'},
+    {day:'15',desc:'Conta de energia'},
+    {day:'20',desc:'Internet e telefone'},
+    {day:'Últ.',desc:'Fatura do cartão de crédito'},
+  ];
   el.innerHTML=`
     <div class="card">
       <div class="section-title">📊 Análise do Score</div>
       <div style="font-size:32px;font-weight:800;font-family:'Syne',sans-serif;color:${sc.color}">${sc.value}<span style="font-size:14px;font-weight:400;color:var(--text-muted)">/100</span></div>
       <div style="font-size:13px;color:var(--text-muted);margin:6px 0 14px">${sc.msg}</div>
       ${sc.details.map(d=>`<div style="font-size:12px;padding:7px 0;border-bottom:1px solid var(--border);color:${d.startsWith('✅')?'var(--accent)':d.startsWith('❌')?'var(--danger)':'var(--warning)'}">${d}</div>`).join('')}
-      <div style="margin-top:12px;padding:12px;background:var(--accent-dim);border-radius:var(--radius-sm);font-size:12px;color:var(--text-muted)">💡 Projeção anual de despesas: <strong style="color:var(--text)">${U.fmt(S.totalD()*12)}</strong></div>
+      <div style="margin-top:12px;padding:12px;background:var(--accent-dim);border-radius:var(--radius-sm);font-size:12px;color:var(--text-muted)">
+        💡 Projeção anual de despesas: <strong style="color:var(--text)">${U.fmt(S.totalD()*12)}</strong>
+      </div>
     </div>
     <div class="section-title">💡 Recomendações</div>
-    ${tips.map(t=>`<div class="card" style="border-left:3px solid ${t.color}"><div style="display:flex;gap:12px"><span style="font-size:22px">${t.icon}</span><div><div style="font-size:13px;font-weight:700;margin-bottom:4px;color:${t.color}">${t.title}</div><div style="font-size:12px;color:var(--text-muted);line-height:1.6">${t.text}</div></div></div></div>`).join('')}
+    ${tips.map(t=>`
+      <div class="card" style="border-left:3px solid ${t.color}">
+        <div style="display:flex;gap:12px">
+          <span style="font-size:22px;flex-shrink:0">${t.icon}</span>
+          <div>
+            <div style="font-size:13px;font-weight:700;margin-bottom:4px;color:${t.color}">${t.title}</div>
+            <div style="font-size:12px;color:var(--text-muted);line-height:1.6">${t.text}</div>
+          </div>
+        </div>
+      </div>`).join('')}
     <div class="card">
       <div class="section-title">📅 Calendário de Contas Fixas</div>
-      ${cal.map(c=>`<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)"><div style="width:40px;height:40px;border-radius:8px;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--accent);flex-shrink:0">${c.day}</div><div style="font-size:13px;color:var(--text-muted)">${c.desc}</div></div>`).join('')}
+      ${cal.map(c=>`
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+          <div style="width:40px;height:40px;border-radius:8px;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--accent);flex-shrink:0">${c.day}</div>
+          <div style="font-size:13px;color:var(--text-muted)">${c.desc}</div>
+        </div>`).join('')}
     </div>`;
 }
 
-// ─── IMPORT ──────────────────────────────────────────────────────────────────
-const CHATGPT_PROMPT=`Você é um assistente de finanças pessoais. Vou te enviar o texto ou imagem de um extrato bancário brasileiro (conta corrente ou fatura de cartão de crédito).
-
-Sua tarefa é extrair TODAS as transações e retornar APENAS um CSV com este formato exato, sem nenhum texto antes ou depois:
-
-data,descricao,valor,tipo
-AAAA-MM-DD,Descrição da transação,123.45,debito
-AAAA-MM-DD,Salário / Pix recebido,5000.00,credito
-
-Regras obrigatórias:
-- data: formato AAAA-MM-DD (ex: 2025-04-15)
-- descricao: texto limpo, sem aspas, sem vírgulas, máximo 60 caracteres
-- valor: número positivo com ponto decimal (ex: 87.50), nunca negativo
-- tipo: apenas a palavra "debito" ou "credito" (sem acento)
-- tipo credito: salários, PIX recebidos, TED recebidos, estornos, depósitos
-- tipo debito: compras, pagamentos, saques, tarifas, faturas
-- Ignorar totais, saldos, linhas de cabeçalho e rodapé
-- Se houver parcelas (1/12), incluir cada uma como transação separada
-- Não inventar transações — extrair apenas o que está visível
-
-Retorne SOMENTE o CSV, começando pela linha de cabeçalho: data,descricao,valor,tipo`;
-
-function parseCSV(text){
-  const lines=text.trim().split('\n');
-  const txs=[];
-  // detect and skip header
-  let start=0;
-  if(lines[0]&&/data|date|descri|valor|amount/i.test(lines[0])) start=1;
-  for(let i=start;i<lines.length;i++){
-    const line=lines[i].trim();
-    if(!line)continue;
-    // support comma and semicolon delimiters
-    const sep=line.includes(';')?';':',';
-    const parts=line.split(sep).map(p=>p.replace(/^["']|["']$/g,'').trim());
-    if(parts.length<4)continue;
-    const[dateRaw,desc,valRaw,tipoRaw]=parts;
-    // validate date YYYY-MM-DD
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(dateRaw))continue;
-    const amount=parseFloat(valRaw.replace(',','.'));
-    if(isNaN(amount)||amount<=0)continue;
-    const isCredit=/cred/i.test(tipoRaw)||/recebido|salario|salário|deposito|depósito/i.test(tipoRaw);
-    const descClean=desc.slice(0,60)||'Transação importada';
-    txs.push({
-      id:U.uid('csv'),
-      date:dateRaw,
-      description:descClean,
-      amount:Math.abs(amount),
-      type:isCredit?'credit':'debit',
-      category:isCredit?'renda':U.autoCat(descClean),
-      memberId:''
-    });
-  }
-  return txs;
-}
-
-function showImportPreview(parsed, source){
-  if(!parsed.length){
-    toast('⚠️ Nenhuma transação válida encontrada. Verifique o formato.');
-    return;
-  }
+// ══════════════════════════════════════════════════════
+// IMPORT
+// ══════════════════════════════════════════════════════
+function showImportPreview(parsed,source){
+  if(!parsed.length){toast('⚠️ Nenhuma transação válida encontrada');return;}
   _pendingImport=[...parsed];
   const pv=document.getElementById('importPreviewList');
   if(pv){
-    pv.innerHTML=`
-      <div class="alert alert-success" style="margin-bottom:12px">
-        ✅ ${parsed.length} transações encontradas via ${source}
-      </div>`+
-      parsed.map(t=>{
-        const c=U.cat(t.category);
-        return`<div style="display:flex;align-items:center;gap:10px;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:6px">
+    pv.innerHTML=`<div class="alert alert-success" style="margin-bottom:12px">✅ ${parsed.length} transações encontradas via ${source}</div>`+
+      parsed.map(t=>{const c=U.cat(t.category);return`
+        <div style="display:flex;align-items:center;gap:10px;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:6px">
           <span style="font-size:16px">${c.icon}</span>
           <div style="flex:1;min-width:0">
             <div style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${U.esc(t.description)}</div>
             <div style="font-size:11px;color:var(--text-muted)">${t.date} · ${c.label}</div>
           </div>
-          <span style="font-size:13px;font-weight:700;color:${t.type==='credit'?'var(--accent)':'var(--text)'}; flex-shrink:0">
-            ${t.type==='credit'?'+':'-'}${U.fmt(t.amount)}
-          </span>
-        </div>`;
-      }).join('');
+          <span style="font-size:13px;font-weight:700;color:${t.type==='credit'?'var(--accent)':'var(--text)'};flex-shrink:0">${t.type==='credit'?'+':'-'}${U.fmt(t.amount)}</span>
+        </div>`}).join('');
   }
   openModal('modalImportPreview');
 }
 
 function renderImport(){
   const el=document.getElementById('page-import');
-
-  // Copy prompt to clipboard helper (with fallback for iOS)
   el.innerHTML=`
-
-    <!-- STEP 1: ChatGPT -->
-    <div class="card" style="border:1px solid var(--accent)">
+    <!-- PASSO 1: ChatGPT -->
+    <div class="card" style="border-color:var(--accent)">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
         <div style="width:28px;height:28px;border-radius:50%;background:var(--accent);color:#000;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
         <div style="font-size:15px;font-weight:700">Extrair com ChatGPT</div>
       </div>
       <div style="font-size:13px;color:var(--text-muted);line-height:1.7;margin-bottom:14px">
-        PDFs de bancos brasileiros usam imagem — não têm texto extraível. 
-        O ChatGPT consegue ler e converter para CSV. Siga os passos:
+        PDFs de bancos brasileiros usam imagem — sem texto extraível. O ChatGPT lê e converte para CSV.
       </div>
       <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
-        <div style="display:flex;gap:12px;align-items:flex-start">
-          <span style="font-size:20px;flex-shrink:0">📋</span>
-          <div style="font-size:13px;color:var(--text-muted)"><strong style="color:var(--text)">Copie o prompt</strong> clicando no botão abaixo</div>
-        </div>
-        <div style="display:flex;gap:12px;align-items:flex-start">
-          <span style="font-size:20px;flex-shrink:0">🤖</span>
-          <div style="font-size:13px;color:var(--text-muted)"><strong style="color:var(--text)">Abra o ChatGPT</strong> e cole o prompt na conversa</div>
-        </div>
-        <div style="display:flex;gap:12px;align-items:flex-start">
-          <span style="font-size:20px;flex-shrink:0">📎</span>
-          <div style="font-size:13px;color:var(--text-muted)"><strong style="color:var(--text)">Anexe o PDF</strong> do seu extrato na mesma mensagem e envie</div>
-        </div>
-        <div style="display:flex;gap:12px;align-items:flex-start">
-          <span style="font-size:20px;flex-shrink:0">📄</span>
-          <div style="font-size:13px;color:var(--text-muted)"><strong style="color:var(--text)">Copie o CSV</strong> que o ChatGPT retornar</div>
-        </div>
-        <div style="display:flex;gap:12px;align-items:flex-start">
-          <span style="font-size:20px;flex-shrink:0">⬇️</span>
-          <div style="font-size:13px;color:var(--text-muted)"><strong style="color:var(--text)">Cole aqui embaixo</strong> no Passo 2 e importe</div>
-        </div>
+        ${[['📋','Copie o prompt','clicando no botão abaixo'],['🤖','Abra o ChatGPT','cole o prompt na conversa'],['📎','Anexe o PDF','do seu extrato e envie'],['📄','Copie o CSV','que o ChatGPT retornar'],['⬇️','Cole aqui embaixo','no Passo 2 e importe']].map(([ico,strong,rest])=>`
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <span style="font-size:20px;flex-shrink:0">${ico}</span>
+            <div style="font-size:13px;color:var(--text-muted)"><strong style="color:var(--text)">${strong}</strong> ${rest}</div>
+          </div>`).join('')}
       </div>
       <button class="btn btn-accent" id="copyPromptBtn">📋 Copiar Prompt para o ChatGPT</button>
       <div id="copyStatus" style="font-size:12px;color:var(--accent);margin-top:8px;text-align:center;display:none">✅ Prompt copiado!</div>
     </div>
 
-    <!-- STEP 2: Paste CSV -->
+    <!-- PASSO 2: Colar CSV -->
     <div class="card">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
         <div style="width:28px;height:28px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div>
         <div style="font-size:15px;font-weight:700">Colar CSV do ChatGPT</div>
       </div>
       <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px">
-        Cole abaixo o CSV gerado pelo ChatGPT. Formato esperado:<br/>
-        <code style="font-size:11px;color:var(--accent);background:var(--surface2);padding:2px 6px;border-radius:4px;display:inline-block;margin-top:4px">data,descricao,valor,tipo</code>
+        Formato esperado: <code style="font-size:11px;color:var(--accent);background:var(--surface2);padding:2px 6px;border-radius:4px">data,descricao,valor,tipo</code>
       </div>
-      <textarea id="csvPasteArea" placeholder="Cole aqui o CSV do ChatGPT...
-Exemplo:
-data,descricao,valor,tipo
-2025-04-01,iFood Jantar,87.50,debito
-2025-03-27,Salario Marco,8500.00,credito" style="width:100%;height:160px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none;resize:vertical;line-height:1.6"></textarea>
+      <textarea id="csvPasteArea" placeholder="Cole aqui o CSV…&#10;&#10;Exemplo:&#10;data,descricao,valor,tipo&#10;2025-04-01,iFood Jantar,87.50,debito&#10;2025-03-27,Salario Marco,8500.00,credito"
+        style="width:100%;height:140px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;resize:vertical;line-height:1.6;-webkit-appearance:none"></textarea>
 
 ```
   <button class="btn btn-accent" id="parseCsvBtn" style="margin-top:10px">🔍 Processar CSV</button>
 </div>
 
-<!-- STEP 2b: Upload CSV file -->
+<!-- PASSO 2b: Arquivo CSV -->
 <div class="card">
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
     <div style="width:28px;height:28px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0">2b</div>
     <div style="font-size:15px;font-weight:700">Ou importar arquivo CSV</div>
   </div>
-  <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">
-    Alguns bancos exportam CSV diretamente (Inter, Nubank, C6). 
-    Também funciona com o arquivo .csv salvo do ChatGPT.
-  </div>
-  <label class="btn btn-ghost" style="text-align:center;cursor:pointer">
+  <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Funciona com exports nativos do Inter, Nubank, C6 e com arquivos .csv do ChatGPT.</div>
+  <label class="btn btn-ghost" style="text-align:center;cursor:pointer;display:flex;align-items:center;justify-content:center;">
     📂 Selecionar arquivo CSV
     <input type="file" id="csvFileInput" accept=".csv,.txt" style="display:none"/>
   </label>
 </div>
 
-<!-- STEP 3: Manual entry -->
+<!-- PASSO 3: Manual -->
 <div class="card">
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
     <div style="width:28px;height:28px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div>
     <div style="font-size:15px;font-weight:700">Lançamento Manual</div>
   </div>
-  <div class="field"><label>Descrição</label><input id="manDesc" placeholder="Ex: Supermercado Extra"/></div>
+  <div class="field"><label>Descrição</label><input id="manDesc" placeholder="Ex: Supermercado Extra" autocomplete="off"/></div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-    <div class="field"><label>Valor (R$)</label><input id="manAmount" type="number" min="0" step="0.01" placeholder="0,00"/></div>
+    <div class="field"><label>Valor (R$)</label><input id="manAmount" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0,00"/></div>
     <div class="field"><label>Data</label><input id="manDate" type="date"/></div>
   </div>
   <div class="field"><label>Tipo</label>
@@ -968,78 +1273,56 @@ data,descricao,valor,tipo
     </select>
   </div>
   <button class="btn btn-accent" id="manSaveBtn">Adicionar Transação</button>
-</div>
-
-<!-- Por que PDF não funciona -->
-<div class="card" style="border-color:var(--warning-dim)">
-  <div style="font-size:13px;font-weight:700;color:var(--warning);margin-bottom:10px">⚠️ Por que o PDF não é lido diretamente?</div>
-  <div style="font-size:12px;color:var(--text-muted);line-height:1.7">
-    Extratos de bancos brasileiros (Nubank, Itaú, Bradesco, etc.) são gerados como 
-    <strong style="color:var(--text)">imagens dentro do PDF</strong>, não como texto selecionável. 
-    Ler essas imagens requer OCR (reconhecimento óptico), que precisa de um servidor — 
-    impossível num app local no celular. O ChatGPT tem OCR integrado e resolve isso perfeitamente.
-  </div>
 </div>`;
 ```
 
 document.getElementById(‘manDate’).value=U.today();
 buildCatGrid(‘manCatGrid’);
 
-// Copy prompt button — iOS-compatible
+// Copiar prompt — compatível com iOS
 document.getElementById(‘copyPromptBtn’)?.addEventListener(‘click’,()=>{
 const status=document.getElementById(‘copyStatus’);
-// Try modern clipboard API first
-if(navigator.clipboard&&navigator.clipboard.writeText){
-navigator.clipboard.writeText(CHATGPT_PROMPT)
-.then(()=>{ if(status){status.style.display=‘block’;setTimeout(()=>status.style.display=‘none’,3000);} toast(‘✅ Prompt copiado!’); })
-.catch(()=>fallbackCopy());
-} else {
-fallbackCopy();
-}
-function fallbackCopy(){
-// iOS fallback: create textarea, select, copy
+const showOk=()=>{if(status){status.style.display=‘block’;setTimeout(()=>status.style.display=‘none’,3000);}toast(‘✅ Prompt copiado!’);};
+if(navigator.clipboard?.writeText){
+navigator.clipboard.writeText(CHATGPT_PROMPT).then(showOk).catch(fallback);
+} else { fallback(); }
+function fallback(){
 const ta=document.createElement(‘textarea’);
 ta.value=CHATGPT_PROMPT;
-ta.style.cssText=‘position:fixed;top:0;left:0;opacity:0;font-size:16px’;
-document.body.appendChild(ta);
-ta.focus();ta.select();
-// iOS requires setSelectionRange
+ta.style.cssText=‘position:fixed;top:0;left:0;opacity:0;font-size:16px;pointer-events:none;’;
+document.body.appendChild(ta);ta.focus();ta.select();
 ta.setSelectionRange(0,99999);
-try{
-document.execCommand(‘copy’);
-if(status){status.style.display=‘block’;setTimeout(()=>status.style.display=‘none’,3000);}
-toast(‘✅ Prompt copiado!’);
-}catch(err){
-// Last resort: open in a modal so user can manually copy
-openPromptModal();
+try{document.execCommand(‘copy’);showOk();}
+catch(e){
+// Último recurso: mostra modal com texto para copiar manualmente
+document.getElementById(‘confirmMsg’).innerHTML=`<textarea style="width:100%;height:180px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:12px;line-height:1.5">${CHATGPT_PROMPT}</textarea><div style="margin-top:8px;font-size:12px;color:var(--text-muted)">Selecione tudo e copie manualmente.</div>`;
+_confirmCb=null;
+document.getElementById(‘confirmYes’).textContent=‘Fechar’;
+openModal(‘modalConfirm’);
 }
 document.body.removeChild(ta);
 }
 });
 
-// Parse pasted CSV
+// Processar CSV colado
 document.getElementById(‘parseCsvBtn’)?.addEventListener(‘click’,()=>{
 const text=document.getElementById(‘csvPasteArea’)?.value.trim();
 if(!text)return toast(‘⚠️ Cole o CSV antes de processar’);
 const parsed=parseCSV(text);
-if(!parsed.length)return toast(‘⚠️ Nenhuma linha válida encontrada. Verifique o formato.’);
+if(!parsed.length)return toast(‘⚠️ Nenhuma linha válida. Verifique o formato.’);
 showImportPreview(parsed,‘ChatGPT CSV’);
 });
 
-// Upload CSV file
+// Upload CSV
 document.getElementById(‘csvFileInput’)?.addEventListener(‘change’,e=>{
 const file=e.target.files?.[0];if(!file)return;
 const reader=new FileReader();
-reader.onload=()=>{
-const parsed=parseCSV(reader.result);
-if(!parsed.length)return toast(‘⚠️ Arquivo sem transações válidas’);
-showImportPreview(parsed,‘arquivo CSV’);
-};
+reader.onload=()=>{const parsed=parseCSV(reader.result);if(!parsed.length)return toast(‘⚠️ Arquivo sem transações válidas’);showImportPreview(parsed,‘arquivo CSV’);};
 reader.readAsText(file,‘UTF-8’);
 e.target.value=’’;
 });
 
-// Manual type toggle
+// Toggle tipo manual
 document.querySelectorAll(’[data-mantype]’).forEach(btn=>{
 btn.addEventListener(‘click’,()=>{
 document.querySelectorAll(’[data-mantype]’).forEach(b=>b.classList.remove(‘active’));
@@ -1049,7 +1332,7 @@ if(cf)cf.style.display=btn.dataset.mantype===‘debit’?‘flex’:‘none’;
 });
 });
 
-// Manual save
+// Salvar manual
 document.getElementById(‘manSaveBtn’)?.addEventListener(‘click’,()=>{
 const desc=document.getElementById(‘manDesc’)?.value.trim();
 const amount=U.num(document.getElementById(‘manAmount’)?.value);
@@ -1063,57 +1346,58 @@ S.addTx({date,description:desc,amount,type,category:type===‘credit’?‘renda
 document.getElementById(‘manDesc’).value=’’;
 document.getElementById(‘manAmount’).value=’’;
 document.getElementById(‘manDate’).value=U.today();
+document.querySelectorAll(’#manCatGrid .cat-btn’).forEach(b=>b.classList.remove(‘selected’));
 updateHeader();toast(‘✅ Transação adicionada!’);
 });
 }
 
-// Fallback modal to show prompt text for manual copy
-function openPromptModal(){
-// reuse confirm modal as a prompt viewer
-const msg=document.getElementById(‘confirmMsg’);
-if(msg){
-msg.innerHTML=`<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">Copie o texto abaixo manualmente:</div> <textarea style="width:100%;height:200px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:11px;line-height:1.5">${CHATGPT_PROMPT}</textarea>`;
-}
-const yesBtn=document.getElementById(‘confirmYes’);
-if(yesBtn){yesBtn.textContent=‘Fechar’;_confirmCb=null;}
-openModal(‘modalConfirm’);
-}
-
 function buildCatGrid(gridId){
 const el=document.getElementById(gridId);if(!el)return;
-el.innerHTML=CATS.filter(c=>c.id!==‘renda’).map(c=>`<button class="cat-btn" data-cat="${c.id}" style="color:${c.color}"><span class="ci">${c.icon}</span><span class="cl">${c.label}</span></button>`).join(’’);
-el.querySelectorAll(’.cat-btn’).forEach(btn=>btn.addEventListener(‘click’,()=>{el.querySelectorAll(’.cat-btn’).forEach(b=>b.classList.remove(‘selected’));btn.classList.add(‘selected’);}));
+el.innerHTML=CATS.filter(c=>c.id!==‘renda’).map(c=>` <button class="cat-btn" data-cat="${c.id}" style="color:${c.color}"> <span class="ci">${c.icon}</span> <span class="cl">${c.label}</span> </button>`).join(’’);
+el.querySelectorAll(’.cat-btn’).forEach(btn=>btn.addEventListener(‘click’,()=>{
+el.querySelectorAll(’.cat-btn’).forEach(b=>b.classList.remove(‘selected’));
+btn.classList.add(‘selected’);
+}));
 }
 
-// ─── REPORTS ─────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════
+// REPORTS
+// ══════════════════════════════════════════════════════
 function renderReports(){
 const el=document.getElementById(‘page-reports’);
 const td=S.totalD();const tc=S.totalC();
 const cats=CATS.filter(c=>c.id!==‘renda’&&S.catTotal(c.id)>0).sort((a,b)=>S.catTotal(b.id)-S.catTotal(a.id));
-el.innerHTML=` <div class="card"> <div class="section-title">Resumo do Período</div> <div style="display:flex;justify-content:space-around;padding:16px 0"> <div style="text-align:center"><div style="font-size:26px;font-weight:700;color:var(--accent)">${U.fmt(tc)}</div><div style="font-size:11px;color:var(--text-muted);margin-top:4px">Receitas</div></div> <div style="width:1px;background:var(--border)"></div> <div style="text-align:center"><div style="font-size:26px;font-weight:700;color:var(--danger)">${U.fmt(td)}</div><div style="font-size:11px;color:var(--text-muted);margin-top:4px">Despesas</div></div> </div> </div> <div class="card"> <div class="section-title">Por Categoria</div> ${cats.length===0?'<div class="empty"><div>Sem despesas</div></div>': cats.map(c=>{const val=S.catTotal(c.id);const p=td>0?Math.round(val/td*100):0;return`
+el.innerHTML=` <div class="card"> <div class="section-title">Resumo do Período</div> <div style="display:flex;justify-content:space-around;padding:16px 0"> <div style="text-align:center"><div style="font-size:26px;font-weight:700;color:var(--accent)">${U.fmt(tc)}</div><div style="font-size:11px;color:var(--text-muted);margin-top:4px">Receitas</div></div> <div style="width:1px;background:var(--border)"></div> <div style="text-align:center"><div style="font-size:26px;font-weight:700;color:var(--danger)">${U.fmt(td)}</div><div style="font-size:11px;color:var(--text-muted);margin-top:4px">Despesas</div></div> </div> </div> <div class="card"> <div class="section-title">Por Categoria</div> ${cats.length===0?'<div class="empty"><div>Sem despesas</div></div>':cats.map(c=>{const val=S.catTotal(c.id);const p=td>0?Math.round(val/td*100):0;return`
 <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
 <span style="font-size:18px">${c.icon}</span>
 <div style="flex:1"><div style="font-size:13px;margin-bottom:4px">${c.label}</div><div class="progress-wrap" style="height:4px"><div class="progress-bar" style="width:${p}%;background:${c.color}"></div></div></div>
 <div style="text-align:right"><div style="font-size:13px;font-weight:700">${U.fmt(val)}</div><div style="font-size:11px;color:var(--text-muted)">${p}%</div></div>
-</div>`;}).join('')} </div> <button class="btn btn-ghost" id="expCsvBtn">⬇️ Exportar CSV</button> <button class="btn btn-ghost" id="expJsonBtn">📤 Exportar Backup</button>`;
+</div>`;}).join('')} </div> <button class="btn btn-ghost" id="expCsvBtn">⬇️ Exportar CSV</button> <button class="btn btn-ghost" id="expJsonBtn">📤 Exportar Backup JSON</button>`;
 document.getElementById(‘expCsvBtn’)?.addEventListener(‘click’,exportCSV);
 document.getElementById(‘expJsonBtn’)?.addEventListener(‘click’,exportJSON);
 }
 
-// ─── CONFIG ──────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════════════
 function renderConfig(){
 const el=document.getElementById(‘page-config’);
 const td=S.totalD();const months=td>0?(S.config.emergencyFund/td).toFixed(1):‘0’;
-el.innerHTML=` <div class="card"> <div class="section-title">👤 Perfil da Família</div> <div class="field"><label>Nome da Família</label><input id="cfgName" value="${U.esc(S.config.familyName)}"/></div> <div class="field"><label>Renda Mensal (R$)</label><input id="cfgIncome" type="number" value="${S.config.monthlyIncome}"/></div> <div class="field"><label>Reserva de Emergência (R$)</label><input id="cfgEmergency" type="number" value="${S.config.emergencyFund}"/></div> <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Sua reserva cobre ${months} meses. Meta: 6 meses = ${U.fmt(td*6)}</div> <button class="btn btn-accent" id="cfgSaveBtn">Salvar Perfil</button> </div> <div class="card"> <div class="section-title">🎯 Limites por Categoria</div> ${CATS.filter(c=>c.id!=='renda').map(c=>`
+el.innerHTML=` <div class="card"> <div class="section-title">👤 Perfil da Família</div> <div class="field"><label>Nome da Família</label><input id="cfgName" value="${U.esc(S.config.familyName)}"/></div> <div class="field"><label>Renda Mensal (R$)</label><input id="cfgIncome" type="number" inputmode="decimal" value="${S.config.monthlyIncome}"/></div> <div class="field"><label>Reserva de Emergência (R$)</label><input id="cfgEmergency" type="number" inputmode="decimal" value="${S.config.emergencyFund}"/></div> <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Sua reserva cobre ${months} meses. Meta: 6 meses = ${U.fmt(td*6)}</div> <button class="btn btn-accent" id="cfgSaveBtn">Salvar Perfil</button> </div> <div class="card"> <div class="section-title">🎯 Limites por Categoria</div> ${CATS.filter(c=>c.id!=='renda').map(c=>`
 <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
 <span style="font-size:18px">${c.icon}</span>
 <span style="flex:1;font-size:13px">${c.label}</span>
-<input type="number" min="0" class="lim-input" data-cat="${c.id}" value="${S.catLim(c.id)}" style="width:100px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);font-size:13px;text-align:right"/>
-</div>`).join('')} <button class="btn btn-accent" id="limSaveBtn" style="margin-top:14px">Salvar Limites</button> </div> <div class="card"> <div class="section-title">💾 Dados</div> <div style="display:flex;flex-direction:column;gap:10px"> <button class="btn btn-ghost" id="expCsvBtn2">⬇️ Exportar CSV</button> <label class="btn btn-ghost" style="text-align:center;cursor:pointer">📥 Importar Backup JSON<input type="file" accept=".json" id="importJsonInput" style="display:none"/></label> <button class="btn btn-danger" id="clearBtn">🗑️ Apagar Todos os Dados</button> </div> </div>`;
+<input type="number" inputmode="decimal" min="0" class="lim-input" data-cat="${c.id}" value="${S.catLim(c.id)}"
+style="width:100px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-size:15px;text-align:right;-webkit-appearance:none;"/>
+</div>`).join('')} <button class="btn btn-accent" id="limSaveBtn" style="margin-top:14px">Salvar Limites</button> </div> <div class="card"> <div class="section-title">💾 Dados</div> <div style="display:flex;flex-direction:column;gap:10px"> <button class="btn btn-ghost" id="expCsvBtn2">⬇️ Exportar CSV</button> <label class="btn btn-ghost" style="text-align:center;cursor:pointer;display:flex;align-items:center;justify-content:center;"> 📥 Importar Backup JSON <input type="file" accept=".json" id="importJsonInput" style="display:none"/> </label> <button class="btn btn-danger" id="clearBtn">🗑️ Apagar Todos os Dados</button> </div> </div>`;
 
 document.getElementById(‘cfgSaveBtn’)?.addEventListener(‘click’,()=>{
-S.updConfig({familyName:document.getElementById(‘cfgName’)?.value||‘Minha Família’,monthlyIncome:U.num(document.getElementById(‘cfgIncome’)?.value),emergencyFund:U.num(document.getElementById(‘cfgEmergency’)?.value)});
-updateHeader();toast(‘✅ Perfil salvo!’);
+S.updConfig({
+familyName:document.getElementById(‘cfgName’)?.value||‘Minha Família’,
+monthlyIncome:U.num(document.getElementById(‘cfgIncome’)?.value),
+emergencyFund:U.num(document.getElementById(‘cfgEmergency’)?.value),
+});
+updateHeader();renderConfig();toast(‘✅ Perfil salvo!’);
 });
 document.getElementById(‘limSaveBtn’)?.addEventListener(‘click’,()=>{
 document.querySelectorAll(’.lim-input’).forEach(inp=>S.setCatLim(inp.dataset.cat,U.num(inp.value)));
@@ -1130,95 +1414,63 @@ if(!d.transactions)return toast(‘⚠️ Arquivo inválido’);
 S.transactions=d.transactions||[];S.members=d.members||[];S.goals=d.goals||[];
 if(d.config)Object.assign(S.config,d.config);
 if(d.catLimits)S.catLimits=d.catLimits;
-S.save();updateHeader();toast(‘✅ Backup importado!’);
+S.save();updateHeader();renderConfig();toast(‘✅ Backup importado!’);
 }catch{toast(‘⚠️ Erro ao ler o arquivo’);}
 e.target.value=’’;
 };
 reader.readAsText(file);
 });
-
-// FIX PRINCIPAL: botão limpar agora usa showConfirm (sem confirm() nativo) e clearAll()
 document.getElementById(‘clearBtn’)?.addEventListener(‘click’,()=>{
-showConfirm(‘Todos os dados serão apagados permanentemente. O app voltará completamente vazio, sem dados de demonstração. Confirmar?’,()=>{
-S.clearAll();
-updateHeader();
-goTo(‘dashboard’);
-toast(‘✅ Dados apagados. App zerado.’);
+showConfirm(‘Todos os dados serão apagados permanentemente. O app voltará vazio. Confirmar?’,()=>{
+S.clearAll();updateHeader();goTo(‘dashboard’);toast(‘✅ Dados apagados.’);
 });
 });
 }
 
-// ─── EXPORTS ─────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════
+// EXPORTS — FIX 4: Web Share API para iOS PWA
+// ══════════════════════════════════════════════════════
 function exportCSV(){
-const rows=[‘Data,Descrição,Valor,Tipo,Categoria,Membro’];
+const rows=[’\uFEFFData,Descrição,Valor,Tipo,Categoria,Membro’];
 S.transactions.forEach(t=>{
-const mem=S.members.find(m=>m.id===t.memberId);
-const c=U.cat(t.category);
+const mem=S.members.find(m=>m.id===t.memberId);const c=U.cat(t.category);
 rows.push(`"${t.date}","${t.description.replace(/"/g,'""')}",${t.type==='debit'?-t.amount:t.amount},"${t.type==='debit'?'Despesa':'Receita'}","${c.label}","${mem?.name||''}"`);
 });
-const content=’\uFEFF’+rows.join(’\n’); // BOM for Excel UTF-8
-dlText(content,‘text/csv’,`financas_${U.today()}.csv`,‘✅ CSV exportado!’);
+dlText(rows.join(’\n’),‘text/csv’,`financas_${U.today()}.csv`,‘✅ CSV exportado!’);
 }
-
 function exportJSON(){
-const content=JSON.stringify({
-transactions:S.transactions,members:S.members,
-goals:S.goals,config:S.config,catLimits:S.catLimits
-},null,2);
-dlText(content,‘application/json’,`financas_backup_${U.today()}.json`,‘✅ Backup exportado!’);
+dlText(JSON.stringify({transactions:S.transactions,members:S.members,goals:S.goals,config:S.config,catLimits:S.catLimits},null,2),‘application/json’,`financas_backup_${U.today()}.json`,‘✅ Backup exportado!’);
 }
 
-// FIX 4: iOS PWA silently ignores <a download>.
-// Strategy:
-//   1. Web Share API with file (iOS 15+, iPadOS 15+) — native share sheet
-//   2. Web Share API with text (iOS 14) — share as plain text
-//   3. Open data URI in new tab — user can long-press > Save (older iOS)
-async function dlText(content, mimeType, filename, successMsg){
+// FIX 4: Cascata de métodos de download compatível com iOS PWA
+async function dlText(content,mimeType,filename,successMsg){
 const blob=new Blob([content],{type:mimeType+’;charset=utf-8;’});
-
-// Try Web Share API with File (iOS 15+ supports sharing files)
-if(navigator.canShare && navigator.share){
+// Nível 1: Web Share com arquivo (iOS 15+)
+if(navigator.canShare&&navigator.share){
 try{
 const file=new File([blob],filename,{type:mimeType});
 if(navigator.canShare({files:[file]})){
 await navigator.share({files:[file],title:filename});
-toast(successMsg);
-return;
+toast(successMsg);return;
 }
-}catch(err){
-if(err.name!==‘AbortError’){
-// canShare said yes but share failed — fall through
-console.warn(‘share with file failed:’,err);
-} else {
-// User cancelled share sheet — don’t show error
-return;
+}catch(err){if(err.name===‘AbortError’)return;}
 }
+// Nível 2: Web Share com texto (iOS 14, apenas CSV)
+if(navigator.share&&mimeType===‘text/csv’){
+try{await navigator.share({title:filename,text:content});toast(successMsg);return;}
+catch(err){if(err.name===‘AbortError’)return;}
 }
-}
-
-// Fallback: share as text (iOS 14 / no file share support)
-if(navigator.share && mimeType===‘text/csv’){
-try{
-await navigator.share({title:filename,text:content});
-toast(successMsg);
-return;
-}catch(err){
-if(err.name===‘AbortError’) return;
-}
-}
-
-// Last resort: open as data URI — user taps & holds to save on iOS,
-// or browser downloads normally on desktop/Android
+// Nível 3: link de download (desktop / Android / fallback)
 const url=URL.createObjectURL(blob);
-const a=document.createElement(‘a’);
-a.href=url; a.download=filename; a.target=’_blank’;
-document.body.appendChild(a); a.click();
-document.body.removeChild(a);
+const a=document.createElement(‘a’);a.href=url;a.download=filename;a.target=’_blank’;
+document.body.appendChild(a);a.click();document.body.removeChild(a);
 setTimeout(()=>URL.revokeObjectURL(url),5000);
-toast(successMsg+’ (toque e segure para salvar se não baixar automaticamente)’);
+toast(successMsg+’ — toque e segure o arquivo para salvar no iOS’);
 }
 
-// ─── QUICK ADD ───────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════
+// QUICK ADD MODAL
+// ══════════════════════════════════════════════════════
 function initQuickAdd(){
 buildCatGrid(‘qCatGrid’);
 document.querySelectorAll(’[data-qtype]’).forEach(btn=>{
@@ -1244,100 +1496,168 @@ document.querySelector(’[data-qtype=“debit”]’)?.classList.add(‘active�
 document.querySelectorAll(’#qCatGrid .cat-btn’).forEach(b=>b.classList.remove(‘selected’));
 updateHeader();
 if(S.ui.page===‘dashboard’)renderDashboard();
-if(S.ui.page===‘transactions’)renderTransactions();
+if(S.ui.page===‘transactions’)renderTransactionsList(getFilteredTxs());
 toast(‘✅ Transação adicionada!’);
 });
 }
 
-// ─── GLOBAL EVENT DELEGATION ──────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════
+// GLOBAL EVENT DELEGATION
+// ══════════════════════════════════════════════════════
 document.addEventListener(‘click’,e=>{
-if(e.target.closest(’#menuBtn’)){document.getElementById(‘sidebar’).classList.toggle(‘open’);document.getElementById(‘sidebarOverlay’).classList.toggle(‘open’);return;}
-if(e.target.id===‘sidebarOverlay’){document.getElementById(‘sidebar’).classList.remove(‘open’);document.getElementById(‘sidebarOverlay’).classList.remove(‘open’);return;}
+// Menu hamburguer
+if(e.target.closest(’#menuBtn’)){
+document.getElementById(‘sidebar’).classList.toggle(‘open’);
+document.getElementById(‘sidebarOverlay’).classList.toggle(‘open’);
+return;
+}
+// Fechar sidebar pelo overlay
+if(e.target.id===‘sidebarOverlay’){
+document.getElementById(‘sidebar’).classList.remove(‘open’);
+document.getElementById(‘sidebarOverlay’).classList.remove(‘open’);
+return;
+}
+// Navegação sidebar
 const si=e.target.closest(’.sidebar-item[data-page]’);
-if(si){goTo(si.dataset.page);document.getElementById(‘sidebar’).classList.remove(‘open’);document.getElementById(‘sidebarOverlay’).classList.remove(‘open’);return;}
+if(si){
+goTo(si.dataset.page);
+document.getElementById(‘sidebar’).classList.remove(‘open’);
+document.getElementById(‘sidebarOverlay’).classList.remove(‘open’);
+return;
+}
+// Navegação bottom nav
 const nb=e.target.closest(’.nav-btn[data-nav]’);
 if(nb){nb.dataset.nav===‘add’?openModal(‘modalQuick’):goTo(nb.dataset.nav);return;}
+// Fechar modal pelo atributo data-close
 const mc=e.target.closest(’[data-close]’);
 if(mc){closeModal(mc.dataset.close);return;}
+// Fechar modal clicando no fundo
 if(e.target.classList.contains(‘modal-bg’)&&e.target.id){closeModal(e.target.id);return;}
+// Expandir transação
 const ti=e.target.closest(’.tx-item[data-txid]’);
-if(ti&&!e.target.closest(’[data-chcat]’)&&!e.target.closest(’[data-deltx]’)){const sid=ti.dataset.txid.replace(/[^a-zA-Z0-9_]/g,’*’);document.getElementById(’det*’+sid)?.classList.toggle(‘open’);return;}
+if(ti&&!e.target.closest(’[data-chcat]’)&&!e.target.closest(’[data-deltx]’)){
+const sid=ti.dataset.txid.replace(/[^a-zA-Z0-9_]/g,’*’);
+document.getElementById(’det*’+sid)?.classList.toggle(‘open’);
+return;
+}
+// Mudar categoria
 const chcat=e.target.closest(’[data-chcat]’);
 if(chcat){
 const[txId,catId]=chcat.dataset.chcat.split(’|’);
 S.updTxCat(txId,catId);
-// If on transactions page, only refresh list — don’t destroy search input
-if(document.getElementById(‘txList’)) renderTransactionsList(getFilteredTxs());
-else renderTransactions();
+if(document.getElementById(‘txList’))renderTransactionsList(getFilteredTxs());
 toast(‘Categoria atualizada!’);
 return;
 }
+// Excluir transação
 const deltx=e.target.closest(’[data-deltx]’);
 if(deltx){
-const id=deltx.dataset.deltx;
-const t=S.transactions.find(x=>x.id===id);
+const id=deltx.dataset.deltx;const t=S.transactions.find(x=>x.id===id);
 showConfirm(`Excluir "${t?.description||'transação'}"?`,()=>{
 S.delTx(id);
-if(document.getElementById(‘txList’)) renderTransactionsList(getFilteredTxs());
-else renderTransactions();
-updateHeader();
-toast(‘🗑️ Excluída.’);
+if(document.getElementById(‘txList’))renderTransactionsList(getFilteredTxs());
+updateHeader();toast(‘🗑️ Excluída.’);
 });
 return;
 }
+// Filtros de transação
 const fc=e.target.closest(’[data-filter]’);
 if(fc){
-S.ui.txFilter=fc.dataset.filter;
-S.ui.search=’’;
-// Reset chips active state and re-render list only if search input exists (page is mounted)
+S.ui.txFilter=fc.dataset.filter;S.ui.search=’’;
 const searchEl=document.getElementById(‘txSearch’);
-if(searchEl){
-searchEl.value=’’;
+if(searchEl)searchEl.value=’’;
+// Atualiza chips sem re-renderizar input
 document.querySelectorAll(’[data-filter]’).forEach(b=>b.classList.toggle(‘active’,b.dataset.filter===fc.dataset.filter));
 renderTransactionsList(getFilteredTxs());
-} else {
-renderTransactions();
-}
 return;
 }
+// Aporte em meta
 const cg=e.target.closest(’[data-contribute]’);
-if(cg){_pendingGoalId=cg.dataset.contribute;const g=S.goals.find(x=>x.id===_pendingGoalId);if(g){document.getElementById(‘contribGoalName’).textContent=`Meta: ${g.name}`;document.getElementById(‘contribAmount’).value=’’;openModal(‘modalContribution’);}return;}
+if(cg){
+_pendingGoalId=cg.dataset.contribute;
+const g=S.goals.find(x=>x.id===_pendingGoalId);
+if(g){document.getElementById(‘contribGoalName’).textContent=`Meta: ${g.name}`;document.getElementById(‘contribAmount’).value=’’;openModal(‘modalContribution’);}
+return;
+}
+// Excluir meta
 const dg=e.target.closest(’[data-delgoal]’);
-if(dg){const id=dg.dataset.delgoal;const g=S.goals.find(x=>x.id===id);showConfirm(`Excluir meta "${g?.name}"?`,()=>{S.delGoal(id);renderGoals();toast(‘🗑️ Meta excluída.’);});return;}
+if(dg){
+const id=dg.dataset.delgoal;const g=S.goals.find(x=>x.id===id);
+showConfirm(`Excluir meta "${g?.name}"?`,()=>{S.delGoal(id);renderGoals();toast(‘🗑️ Meta excluída.’);});
+return;
+}
+// Excluir membro
 const dm=e.target.closest(’[data-delmem]’);
-if(dm){const id=dm.dataset.delmem;const m=S.members.find(x=>x.id===id);showConfirm(`Remover "${m?.name}"?`,()=>{S.delMember(id);renderMembers();updateHeader();toast(‘🗑️ Membro removido.’);});return;}
-if(e.target.id===‘confirmYes’){if(_confirmCb){_confirmCb();_confirmCb=null;}closeModal(‘modalConfirm’);return;}
+if(dm){
+const id=dm.dataset.delmem;const m=S.members.find(x=>x.id===id);
+showConfirm(`Remover "${m?.name}"?`,()=>{S.delMember(id);renderMembers();updateHeader();toast(‘🗑️ Membro removido.’);});
+return;
+}
+// Confirmar ação
+if(e.target.id===‘confirmYes’){
+if(_confirmCb){_confirmCb();_confirmCb=null;}
+// Resetar texto do botão caso tenha sido alterado pelo prompt modal
+const btn=document.getElementById(‘confirmYes’);
+if(btn)btn.textContent=‘Confirmar’;
+closeModal(‘modalConfirm’);
+return;
+}
 });
 
-// Modal saves (fora do delegation para evitar conflito)
+// Modal saves (listeners diretos, fora do delegation)
 document.getElementById(‘goalSaveBtn’)?.addEventListener(‘click’,()=>{
-const name=document.getElementById(‘goalName’)?.value.trim();const target=U.num(document.getElementById(‘goalTarget’)?.value);const current=U.num(document.getElementById(‘goalCurrent’)?.value);const deadline=document.getElementById(‘goalDeadline’)?.value;
-if(!name)return toast(‘⚠️ Digite o nome da meta’);if(target<=0)return toast(‘⚠️ Valor alvo inválido’);
-S.addGoal({name,targetAmount:target,currentAmount:current,deadline});closeModal(‘modalGoal’);
-[‘goalName’,‘goalTarget’,‘goalCurrent’,‘goalDeadline’].forEach(id=>{const el=document.getElementById(id);if(el)el.value=’’;});
-if(S.ui.page===‘budget’)renderGoals();toast(‘✅ Meta criada!’);
+const name=document.getElementById(‘goalName’)?.value.trim();
+const target=U.num(document.getElementById(‘goalTarget’)?.value);
+const current=U.num(document.getElementById(‘goalCurrent’)?.value);
+// FIX 2: prazo via dois selects em vez de input[type=month]
+const month=document.getElementById(‘goalMonth’)?.value;
+const year=document.getElementById(‘goalYear’)?.value;
+const deadline=month&&year?`${year}-${month}`:’’;
+if(!name)return toast(‘⚠️ Digite o nome da meta’);
+if(target<=0)return toast(‘⚠️ Valor alvo inválido’);
+S.addGoal({name,targetAmount:target,currentAmount:current,deadline});
+closeModal(‘modalGoal’);
+[‘goalName’,‘goalTarget’,‘goalCurrent’].forEach(id=>{const el=document.getElementById(id);if(el)el.value=’’;});
+document.getElementById(‘goalMonth’).value=’’;document.getElementById(‘goalYear’).value=’’;
+if(S.ui.page===‘budget’)renderGoals();
+toast(‘✅ Meta criada!’);
 });
+
 document.getElementById(‘memberSaveBtn’)?.addEventListener(‘click’,()=>{
-const name=document.getElementById(‘memberName’)?.value.trim();const limit=U.num(document.getElementById(‘memberLimit’)?.value);
-if(!name)return toast(‘⚠️ Digite o nome’);if(!S.addMember({name,limit}))return toast(‘⚠️ Membro já existe’);
-closeModal(‘modalMember’);document.getElementById(‘memberName’).value=’’;document.getElementById(‘memberLimit’).value=’’;
-if(S.ui.page===‘family’)renderFamily();toast(‘✅ Membro adicionado!’);
+const name=document.getElementById(‘memberName’)?.value.trim();
+const limit=U.num(document.getElementById(‘memberLimit’)?.value);
+if(!name)return toast(‘⚠️ Digite o nome’);
+if(!S.addMember({name,limit}))return toast(‘⚠️ Membro já existe’);
+closeModal(‘modalMember’);
+document.getElementById(‘memberName’).value=’’;document.getElementById(‘memberLimit’).value=’’;
+if(S.ui.page===‘family’)renderFamily();
+toast(‘✅ Membro adicionado!’);
 });
+
 document.getElementById(‘contribSaveBtn’)?.addEventListener(‘click’,()=>{
 const amount=U.num(document.getElementById(‘contribAmount’)?.value);
 if(amount<=0)return toast(‘⚠️ Valor inválido’);
-if(_pendingGoalId){S.contributeGoal(_pendingGoalId,amount);closeModal(‘modalContribution’);_pendingGoalId=null;if(S.ui.page===‘budget’)renderGoals();toast(‘✅ Aporte registrado!’);}
+if(_pendingGoalId){
+S.contributeGoal(_pendingGoalId,amount);
+closeModal(‘modalContribution’);_pendingGoalId=null;
+if(S.ui.page===‘budget’)renderGoals();
+toast(‘✅ Aporte registrado!’);
+}
 });
+
 document.getElementById(‘importConfirmBtn’)?.addEventListener(‘click’,()=>{
 if(!_pendingImport.length)return;
-_pendingImport.forEach(t=>S.transactions.unshift(t));S.save();_pendingImport=[];
+_pendingImport.forEach(t=>S.transactions.unshift(t));
+S.save();_pendingImport=[];
 closeModal(‘modalImportPreview’);updateHeader();
 if(S.ui.page===‘transactions’)renderTransactions();
 if(S.ui.page===‘dashboard’)renderDashboard();
-toast(`✅ Transações importadas com sucesso!`);
+toast(‘✅ Transações importadas!’);
 });
 
-// ─── INIT ────────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
 S.load();
 initQuickAdd();
 goTo(‘dashboard’);
